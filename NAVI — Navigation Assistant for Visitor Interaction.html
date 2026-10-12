@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<!-- saved from url=(0137)file:///Users/sayanjeetdas/Library/Containers/net.whatsapp.WhatsApp/Data/tmp/documents/3839610E-33F1-4553-A29B-92EE8C43A234/navi_app.html -->
+<html lang="en" data-theme="dark"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NAVI — Navigation Assistant for Visitor Interaction</title>
+<link rel="stylesheet" href="./NAVI — Navigation Assistant for Visitor Interaction_files/leaflet.min.css">
+<link href="./NAVI — Navigation Assistant for Visitor Interaction_files/css2" rel="stylesheet">
+<style>
+:root[data-theme="dark"]{
+  --bg:#0B0D10; --panel:#11151A; --card:#171C22; --line:#282E36;
+  --text:#F4F6F8; --dim:#8D96A3; --faint:#5B6572;
+  --acc:#35B4E8; --acc-dim:#1B5670; --acc-ink:#04202C;
+  --ok:#37CE92; --warn:#F0B429; --bad:#EF5B5B; --info:#5B9BE8;
+  --mapbg:#0D1116; --shadow:0 8px 28px rgba(0,0,0,.45);
+}
+:root[data-theme="light"]{
+  --bg:#F3F2EF; --panel:#FFFFFF; --card:#FFFFFF; --line:#DFDDD7;
+  --text:#1B2229; --dim:#6B7480; --faint:#9AA2AC;
+  --acc:#0E7FB0; --acc-dim:#BFE0EF; --acc-ink:#FFFFFF;
+  --ok:#1B8A5C; --warn:#9A6A08; --bad:#BE3A3A; --info:#2E6BB8;
+  --mapbg:#E9E7E2; --shadow:0 6px 22px rgba(27,34,41,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:Archivo,system-ui,sans-serif;
+  overflow:hidden;font-size:14px}
+button{font-family:inherit;color:inherit;cursor:pointer;background:none;border:0}
+.mono{font-family:"JetBrains Mono",monospace}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ───────── landing ───────── */
+#landing{position:fixed;inset:0;z-index:2000;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;padding:28px}
+#landing.hide{display:none}
+.land{max-width:560px;width:100%}
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:38px}
+.mark{width:38px;height:38px;flex-shrink:0}
+.land h1{font-size:62px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.land .sub{font-size:19px;color:var(--acc);margin-top:10px}
+.land .tag{font-size:15px;color:var(--dim);margin-top:20px;line-height:1.55}
+.land blockquote{border-left:2px solid var(--acc-dim);padding-left:14px;
+  margin:22px 0 30px;color:var(--dim);font-size:14px;line-height:1.6}
+.land .btns{display:flex;gap:10px;flex-wrap:wrap}
+.pill{padding:13px 22px;border-radius:10px;font-size:14px;font-weight:600;
+  border:1px solid var(--line);background:var(--card);transition:.15s}
+.pill:hover{border-color:var(--acc)}
+.pill.pri{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.land svg.hero{width:100%;max-width:420px;margin-top:30px;opacity:.9}
+.dash{stroke-dasharray:5 4;animation:march 3s linear infinite}
+@keyframes march{to{stroke-dashoffset:-36}}
+
+/* ───────── shell ───────── */
+#app{display:none;height:100vh;grid-template-rows:54px 1fr;
+  grid-template-columns:220px 1fr;grid-template-areas:"top top" "nav main"}
+#app.on{display:grid}
+#app.collapsed{grid-template-columns:60px 1fr}
+
+.top{grid-area:top;display:flex;align-items:center;gap:12px;padding:0 14px;
+  background:var(--panel);border-bottom:1px solid var(--line);z-index:600}
+.top .brand{display:flex;align-items:center;gap:9px;min-width:0}
+.top .brand b{font-size:15px;font-weight:700;letter-spacing:.02em}
+.top .brand span{font-size:10.5px;color:var(--dim);display:block;line-height:1.2}
+.ptitle{font-size:13px;font-weight:600;color:var(--dim);margin-left:14px}
+.sp{flex:1}
+.chip{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;
+  padding:5px 9px;border:1px solid var(--line);border-radius:7px;white-space:nowrap;
+  font-family:"JetBrains Mono",monospace}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}
+.dot.bad{background:var(--bad)}.dot.info{background:var(--info)}
+.ibtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:14px;position:relative}
+.ibtn:hover{border-color:var(--acc)}
+.ibtn .badge{position:absolute;top:-4px;right:-4px;min-width:15px;height:15px;
+  border-radius:8px;background:var(--bad);color:#fff;font-size:9px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;padding:0 3px}
+
+.nav{grid-area:nav;background:var(--panel);border-right:1px solid var(--line);
+  padding:10px 8px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;
+  font-size:13px;font-weight:500;color:var(--dim);text-align:left;width:100%}
+.nav button:hover{background:var(--card);color:var(--text)}
+.nav button[aria-current="page"]{background:var(--acc-dim);color:var(--text);font-weight:600}
+.nav button i{width:16px;text-align:center;font-style:normal;flex-shrink:0;font-size:13px}
+#app.collapsed .nav button span{display:none}
+#app.collapsed .nav button{justify-content:center}
+.nav .sep{height:1px;background:var(--line);margin:8px 4px}
+
+.main{grid-area:main;overflow:hidden;position:relative}
+.page{display:none;height:100%;overflow-y:auto;padding:16px}
+.page.on{display:block}
+.page.nopad{padding:0}
+
+/* ───────── components ───────── */
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.grid{display:grid;gap:12px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+h2{font-size:16px;font-weight:700;margin-bottom:4px}
+h3{font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.06em;margin-bottom:9px}
+.lede{font-size:12.5px;color:var(--dim);margin-bottom:14px;line-height:1.5}
+.metric b{display:block;font-size:29px;font-weight:700;line-height:1.1;
+  font-family:"JetBrains Mono",monospace}
+.metric span{font-size:10.5px;color:var(--dim);letter-spacing:.05em;display:block;margin-top:3px}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:5px 0;
+  border-bottom:1px solid var(--line)}
+.kv:last-child{border:0}
+.kv span{color:var(--dim)}
+.kv b{font-family:"JetBrains Mono",monospace;font-weight:500;text-align:right}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.acc{color:var(--acc)}
+.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;
+  padding:3px 7px;border-radius:5px;border:1px solid var(--line);color:var(--dim);
+  font-family:"JetBrains Mono",monospace}
+.tag.sim{color:var(--warn);border-color:var(--warn)}
+.tag.demo{color:var(--info);border-color:var(--info)}
+.btn{padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--card);
+  font-size:13px;font-weight:600;width:100%;transition:.15s}
+.btn:hover{border-color:var(--acc)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.btn.danger:hover{border-color:var(--bad);color:var(--bad)}
+.btn:disabled{opacity:.42;cursor:default}
+.btn:disabled:hover{border-color:var(--line);color:inherit}
+.btn.sm{padding:7px 9px;font-size:11.5px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+input,select{width:100%;padding:9px 11px;background:var(--bg);color:var(--text);
+  border:1px solid var(--line);border-radius:9px;font:400 13px Archivo,sans-serif}
+input:focus,select:focus{outline:1px solid var(--acc);border-color:var(--acc)}
+.empty{padding:26px 16px;text-align:center;color:var(--faint);font-size:12.5px;line-height:1.6}
+.empty b{display:block;color:var(--dim);font-size:12px;font-weight:700;
+  letter-spacing:.06em;margin-bottom:5px;font-family:"JetBrains Mono",monospace}
+.bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--acc);transition:width .25s}
+
+/* map */
+.maphost{position:relative;height:100%}
+#map{position:absolute;inset:0;background:var(--mapbg)}
+.leaflet-container{font-family:Archivo,sans-serif;background:var(--mapbg)}
+.leaflet-popup-content-wrapper,.leaflet-tooltip{background:var(--panel);color:var(--text);
+  border:1px solid var(--line);border-radius:9px;box-shadow:var(--shadow)}
+.leaflet-popup-tip{background:var(--panel);border:1px solid var(--line)}
+.leaflet-tooltip:before{display:none}
+.leaflet-bar a{background:var(--panel);color:var(--text);border-color:var(--line)}
+.leaflet-control-attribution{background:var(--panel)!important;color:var(--faint)!important;
+  font-size:9.5px!important;border-top-left-radius:6px}
+.leaflet-control-attribution a{color:var(--dim)!important}
+.float{position:absolute;z-index:500;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;box-shadow:var(--shadow);padding:12px;width:250px}
+.float.tl{top:12px;left:12px}.float.tr{top:12px;right:12px}
+.float.br{bottom:26px;right:12px}
+.float h3{margin-bottom:8px}
+.lay{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px}
+.lay input{width:auto;flex:0}
+.sw{width:10px;height:3px;border-radius:2px;flex-shrink:0}
+.tele{font-family:"JetBrains Mono",monospace;font-size:11.5px}
+.tele div{display:flex;justify-content:space-between;padding:2.5px 0}
+.tele span{color:var(--dim)}
+
+/* markers */
+.drone-ico{font-size:19px;color:var(--acc);display:flex;align-items:center;
+  justify-content:center;filter:drop-shadow(0 0 5px rgba(53,180,232,.6));transition:transform .1s}
+.visitor-ico{width:13px;height:13px;border-radius:50%;background:var(--ok);
+  border:2.5px solid var(--panel);box-shadow:0 0 0 2px var(--ok)}
+.pad-ico{width:17px;height:17px;border-radius:4px;background:var(--warn);color:#231803;
+  font:700 9.5px "JetBrains Mono",monospace;display:flex;align-items:center;
+  justify-content:center;border:2px solid var(--panel)}
+
+/* lists */
+.hit{display:flex;gap:10px;align-items:center;width:100%;text-align:left;padding:10px 11px;
+  border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:var(--card)}
+.hit:hover{border-color:var(--acc)}
+.hit .f{flex:1;min-width:0}
+.hit b{display:block;font-size:13px;font-weight:600}
+.hit em{font-style:normal;font-size:11px;color:var(--dim)}
+.hit .d{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--acc);flex-shrink:0}
+.hit .fav{font-size:14px;color:var(--faint);padding:2px 4px}
+.hit .fav.on{color:var(--warn)}
+.leg{display:flex;gap:9px;align-items:flex-start;padding:9px 10px;border:1px solid var(--line);
+  border-radius:9px;margin-bottom:6px;background:var(--card)}
+.leg.act{border-color:var(--acc);background:var(--acc-dim)}
+.leg .n{width:20px;height:20px;flex-shrink:0;border-radius:50%;background:var(--acc);
+  color:var(--acc-ink);font:700 10.5px "JetBrains Mono",monospace;display:flex;
+  align-items:center;justify-content:center}
+.leg .f b{display:block;font-size:12px}
+.leg .f span{font-size:10.5px;color:var(--dim)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.fchip{padding:5px 10px;border:1px solid var(--line);border-radius:16px;font-size:11.5px}
+.fchip[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--acc-ink);font-weight:600}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10px;letter-spacing:.06em;color:var(--dim);
+  font-family:"JetBrains Mono",monospace;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line)}
+tr:last-child td{border:0}
+
+/* pacing gauge */
+.pace{padding:14px 4px 4px}
+.pace .track{position:relative;height:3px;background:var(--line);border-radius:2px;margin:26px 10px 8px}
+.pace .v,.pace .d{position:absolute;top:50%;transform:translate(-50%,-50%);
+  width:13px;height:13px;border-radius:50%}
+.pace .v{background:var(--ok)}.pace .d{background:var(--acc)}
+.pace .lbl{position:absolute;top:-22px;transform:translateX(-50%);font-size:10px;
+  font-family:"JetBrains Mono",monospace;color:var(--dim);white-space:nowrap}
+.pace .gap{text-align:center;font-family:"JetBrains Mono",monospace;font-size:12px;
+  color:var(--acc);margin-top:8px}
+
+/* notifications */
+#toasts{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:1500;
+  display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--acc);
+  border-radius:9px;padding:10px 14px;box-shadow:var(--shadow);max-width:400px}
+.toast.warn{border-left-color:var(--warn)}.toast.bad{border-left-color:var(--bad)}
+.toast.ok{border-left-color:var(--ok)}
+.toast b{display:block;font-size:11px;font-family:"JetBrains Mono",monospace;
+  letter-spacing:.05em;margin-bottom:2px}
+.toast span{font-size:12px;color:var(--dim)}
+#drawer{position:fixed;top:54px;right:0;bottom:0;width:320px;background:var(--panel);
+  border-left:1px solid var(--line);z-index:900;padding:14px;overflow-y:auto;
+  transform:translateX(100%);transition:transform .2s}
+#drawer.on{transform:none}
+.nrow{padding:9px 0;border-bottom:1px solid var(--line)}
+.nrow b{display:block;font-size:11px;font-family:"JetBrains Mono",monospace;letter-spacing:.05em}
+.nrow span{font-size:12px;color:var(--dim)}
+.nrow time{font-size:10px;color:var(--faint);font-family:"JetBrains Mono",monospace}
+
+/* modal */
+#modal{position:fixed;inset:0;z-index:1600;background:rgba(0,0,0,.55);
+  display:none;align-items:center;justify-content:center;padding:20px}
+#modal.on{display:flex}
+.sheet{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:20px;max-width:400px;width:100%;box-shadow:var(--shadow)}
+.sheet h2{margin-bottom:8px}
+.sheet p{font-size:13px;color:var(--dim);line-height:1.55;margin-bottom:16px}
+
+/* visitor mode */
+#visitor{position:fixed;inset:0;z-index:1800;background:var(--bg);display:none;
+  flex-direction:column}
+#visitor.on{display:flex}
+.vtop{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.vbody{flex:1;overflow-y:auto;padding:20px 16px;max-width:520px;margin:0 auto;width:100%}
+.vbody h1{font-size:27px;font-weight:700;line-height:1.25;margin-bottom:16px}
+.vstep{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--dim);margin-bottom:18px}
+.vstep i{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;
+  font-family:"JetBrains Mono",monospace;flex-shrink:0}
+.vstep i.on{background:var(--acc);border-color:var(--acc);color:var(--acc-ink);font-weight:700}
+.vstep i.done{background:var(--ok);border-color:var(--ok);color:#fff}
+.vcard{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:18px;margin-bottom:12px}
+.vbig{font-size:44px;font-weight:700;font-family:"JetBrains Mono",monospace;line-height:1.05}
+
+@media (max-width:1100px){ .g4{grid-template-columns:repeat(2,1fr)} }
+@media (max-width:900px){
+  #app{grid-template-columns:60px 1fr}
+  #app .nav button span{display:none}
+  #app .nav button{justify-content:center}
+  .g3,.g2{grid-template-columns:1fr}
+  .float{width:210px}
+  .ptitle{display:none}
+  .land h1{font-size:44px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═════════ LANDING ═════════ -->
+<div id="landing" class="hide">
+  <div class="land">
+    <div class="logo">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+        <path d="M20 3 L34 31 L20 24 L6 31 Z" fill="none" stroke="var(--acc)" stroke-width="2.2" stroke-linejoin="round"></path>
+        <circle cx="20" cy="24" r="3.2" fill="var(--acc)"></circle>
+      </svg>
+      <div>
+        <b style="font-size:13px;letter-spacing:.14em;font-family:&#39;JetBrains Mono&#39;,monospace">NAVI</b>
+      </div>
+    </div>
+    <h1>NAVI</h1>
+    <div class="sub">Navigation Assistant for Visitor Interaction</div>
+    <div class="tag" style="font-size:16px;color:var(--text);margin-top:16px;font-weight:600">
+      Aerial guidance for the modern campus.</div>
+    <blockquote>Select your destination. Share your location. Follow NAVI.</blockquote>
+    <div class="btns">
+      <button class="pill pri" onclick="enterApp()">ENTER CONTROL CENTER</button>
+      <button class="pill" onclick="enterVisitor()">VISITOR MODE</button>
+    </div>
+    <svg class="hero" viewBox="0 0 420 130" aria-label="Stylised campus route">
+      <path d="M14 104 L96 104 L150 62 L246 62 L300 30 L404 30" fill="none" stroke="var(--line)" stroke-width="6" stroke-linecap="round"></path>
+      <path class="dash" d="M14 104 L96 104 L150 62 L246 62 L300 30 L404 30" fill="none" stroke="var(--acc)" stroke-width="2.4" stroke-linecap="round"></path>
+      <circle cx="14" cy="104" r="6" fill="var(--acc)"></circle>
+      <circle cx="404" cy="30" r="6" fill="none" stroke="var(--acc)" stroke-width="2.4"></circle>
+      <g transform="translate(246,62)">
+        <path d="M-7 0 L7 0 M0 -7 L0 7" stroke="var(--acc)" stroke-width="2" stroke-linecap="round"></path>
+        <circle r="10" fill="none" stroke="var(--acc)" stroke-width="1.4" opacity=".55"></circle>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<!-- ═════════ OPERATOR SHELL ═════════ -->
+<div id="app" class="on">
+  <header class="top">
+    <button class="ibtn" onclick="document.getElementById(&#39;app&#39;).classList.toggle(&#39;collapsed&#39;);setTimeout(fixMap,220)" aria-label="Toggle sidebar">☰</button>
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 40 40" aria-hidden="true">
+        <path d="M20 3 L34 31 L20 24 L6 31 Z" fill="none" stroke="var(--acc)" stroke-width="2.6" stroke-linejoin="round"></path><circle cx="20" cy="24" r="3" fill="var(--acc)"></circle>
+      </svg>
+      <div><b>NAVI</b><span>Navigation Assistant for Visitor Interaction</span></div>
+    </div>
+    <div class="ptitle" id="ptitle">Overview</div>
+    <div class="sp"></div>
+    <div class="chip" id="cSys"><i class="dot ok"></i><span>SYSTEM ONLINE</span></div>
+    <div class="chip" id="cRtk"><i class="dot warn"></i><span>NO FIX</span></div>
+    <div class="chip"><i class="dot info"></i><span>SIMULATION</span></div>
+    <button class="ibtn" onclick="toggleTheme()" aria-label="Toggle theme" id="themeBtn">◐</button>
+    <button class="ibtn" onclick="document.getElementById(&#39;drawer&#39;).classList.toggle(&#39;on&#39;)" aria-label="Notifications">🔔<i class="badge" id="nBadge" style="display: flex;">1</i></button>
+  </header>
+
+  <nav class="nav" aria-label="Main">
+    <button data-pg="overview" aria-current="page"><i>▦</i><span>Overview</span></button>
+    <button data-pg="livemap" aria-current="false"><i>◈</i><span>Live Map</span></button>
+    <button data-pg="planner" aria-current="false"><i>⤳</i><span>Route Planner</span></button>
+    <button data-pg="mission" aria-current="false"><i>◎</i><span>Mission Control</span></button>
+    <button data-pg="fleet" aria-current="false"><i>✈</i><span>Fleet</span></button>
+    <button data-pg="sim" aria-current="false"><i>▶</i><span>Simulation</span></button>
+    <button data-pg="safety" aria-current="false"><i>⚠</i><span>Safety</span></button>
+    <button data-pg="dests" aria-current="false"><i>⚑</i><span>Destinations</span></button>
+    <button data-pg="stats" aria-current="false"><i>▤</i><span>Statistics</span></button>
+    <div class="sep"></div>
+    <button data-pg="about" aria-current="false"><i>ℹ</i><span>About</span></button>
+    <button data-pg="settings" aria-current="false"><i>⚙</i><span>Settings</span></button>
+    <div class="sep"></div>
+    <button onclick="enterVisitor()"><i>☺</i><span>Visitor Mode</span></button>
+  </nav>
+
+  <main class="main">
+    <section class="page on" id="pg-overview">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+    <h2>Overview</h2><span class="tag sim">SIMULATION</span></div>
+  <p class="lede">All values below are produced by the simulator and the surveyed campus graph.
+    No aircraft is connected.</p>
+  <div class="grid g4" style="margin-bottom:12px">
+    <div class="card metric"><b>0 / 6</b><span>ACTIVE DRONES</span></div>
+    <div class="card metric"><b>0</b><span>VISITORS BEING GUIDED</span></div>
+    <div class="card metric"><b style="font-size:19px">—</b><span>ACTIVE MISSION</span></div>
+    <div class="card metric"><b>—</b><span>ROUTE DISTANCE</span></div>
+  </div>
+  <div class="grid g4" style="margin-bottom:12px">
+    <div class="card metric"><b>—</b><span>EST. WALKING TIME</span></div>
+    <div class="card metric"><b class="ok">100%</b><span>BATTERY</span></div>
+    <div class="card metric"><b class="warn">NO FIX</b><span>RTK</span></div>
+    <div class="card metric"><b class="ok">SAFE</b><span>SYSTEM</span></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>PLAN A MISSION</h3>
+      <select onchange="state.pad=+this.value;plan();renderAll()" aria-label="Launch pad"><option value="111" selected="">Gate Pad — node 111</option><option value="50">Central Pad — node 50</option><option value="40">East Pad — node 40</option><option value="7">North-West Pad — node 7</option><option value="27">South Pad — node 27</option><option value="68">E Block Pad — node 68</option></select><div style="height:8px"></div><select onchange="selectDest(this.value)" aria-label="Destination">
+    <option value="">Select a destination…</option><option value="A Block hostel">A Block hostel</option><option value="Academic Block 1">Academic Block 1</option><option value="Academic Block 2">Academic Block 2</option><option value="Academic Block 3">Academic Block 3</option><option value="Academic Block 4">Academic Block 4</option><option value="Academic Block 5">Academic Block 5</option><option value="Admin Block">Admin Block</option><option value="Alpha Block">Alpha Block</option><option value="B Block Hostel">B Block Hostel</option><option value="Basketball Court">Basketball Court</option><option value="C Block Hostel">C Block Hostel</option><option value="Cricket Ground">Cricket Ground</option><option value="D1 Block Hostel">D1 Block Hostel</option><option value="D2 Block Hostel">D2 Block Hostel</option><option value="E Block Hostel">E Block Hostel</option><option value="Football Ground">Football Ground</option><option value="Gazebo">Gazebo</option><option value="Ground">Ground</option><option value="Guest House">Guest House</option><option value="GymKhaana">GymKhaana</option><option value="Mahatma Gandhi Auditorium">Mahatma Gandhi Auditorium</option><option value="North Square">North Square</option><option value="Omega Block">Omega Block</option><option value="Sigma Block">Sigma Block</option><option value="Site Office">Site Office</option><option value="Staff Parking 1">Staff Parking 1</option><option value="Staff Parking 2">Staff Parking 2</option><option value="Student&#39;s Parking 2">Student's Parking 2</option><option value="Student&#39;s parking">Student's parking</option><option value="Swimming Pool">Swimming Pool</option><option value="Tennis Court">Tennis Court</option><option value="Transport Office">Transport Office</option><option value="VIT-SEDAXIS">VIT-SEDAXIS</option><option value="volleyball Court">volleyball Court</option></select>
+      <div style="height:10px"></div>
+      <div class="row"><button class="btn pri" onclick="go(&#39;planner&#39;)">PLAN ROUTE</button>
+      <button class="btn" onclick="go(&#39;livemap&#39;)">OPEN MAP</button></div></div>
+    <div class="card"><h3>ROUTE SUMMARY</h3><div class="empty"><b>NO ACTIVE MISSION</b>Select a destination to plan a route.</div></div>
+  </div></section>
+    <section class="page nopad" id="pg-livemap">
+      <div class="maphost" id="mapHost">
+        
+        <div class="float tl" id="layerPanel"><h3>BASE MAP</h3>
+     <select id="baseSel" onchange="setBase(this.value)" aria-label="Base map">
+       <option value="sat">Satellite</option><option value="streets">Streets</option>
+       <option value="dark">Dark</option><option value="light">Light</option>
+       <option value="auto">Match theme</option></select>
+     <div style="height:10px"></div><h3>CAMPUS</h3><label class="lay"><input type="checkbox" id="L-fence" checked="" onchange="toggleLayer(&#39;fence&#39;,this.checked)"><i class="sw" style="background:var(--bad)"></i>Campus Boundary</label><label class="lay"><input type="checkbox" id="L-paths" checked="" onchange="toggleLayer(&#39;paths&#39;,this.checked)"><i class="sw" style="background:var(--faint)"></i>Pathways &amp; Roads</label><label class="lay"><input type="checkbox" id="L-dests" checked="" onchange="toggleLayer(&#39;dests&#39;,this.checked)"><i class="sw" style="background:var(--text)"></i>Destinations</label><label class="lay"><input type="checkbox" id="L-pads" checked="" onchange="toggleLayer(&#39;pads&#39;,this.checked)"><i class="sw" style="background:var(--warn)"></i>Launch Pads</label><label class="lay"><input type="checkbox" id="L-wp" onchange="toggleLayer(&#39;wp&#39;,this.checked)"><i class="sw" style="background:var(--acc)"></i>Waypoints</label><h3>DRONE</h3><label class="lay"><input type="checkbox" id="L-drone" checked="" onchange="toggleLayer(&#39;drone&#39;,this.checked)"><i class="sw" style="background:var(--acc)"></i>Drone Position</label><label class="lay"><input type="checkbox" id="L-route" checked="" onchange="toggleLayer(&#39;route&#39;,this.checked)"><i class="sw" style="background:var(--acc)"></i>Planned Route</label><label class="lay"><input type="checkbox" id="L-trail" checked="" onchange="toggleLayer(&#39;trail&#39;,this.checked)"><i class="sw" style="background:var(--warn)"></i>Flown Trail</label><label class="lay"><input type="checkbox" id="L-visitor" checked="" onchange="toggleLayer(&#39;visitor&#39;,this.checked)"><i class="sw" style="background:var(--ok)"></i>Visitor Position</label><label class="lay"><input type="checkbox" id="L-lead" onchange="toggleLayer(&#39;lead&#39;,this.checked)"><i class="sw" style="background:var(--ok)"></i>Lead Distance</label><h3>SAFETY</h3><label class="lay"><input type="checkbox" id="L-risk" checked="" onchange="toggleLayer(&#39;risk&#39;,this.checked)"><i class="sw" style="background:var(--warn)"></i>Boundary Risk Points</label></div>
+        <div class="float tr" id="routePanel"><h3>ROUTE</h3><div class="empty"><b>NO ACTIVE MISSION</b>Select a destination to plan a route.</div>
+      </div>
+        <div class="float br" id="telePanel"></div>
+      <div id="map" class="leaflet-container leaflet-touch leaflet-retina leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" tabindex="0"><div class="leaflet-pane leaflet-map-pane" style="transform: translate3d(0px, 0px, 0px);"><div class="leaflet-pane leaflet-tile-pane"><div class="leaflet-layer " style="z-index: 1; opacity: 1;"><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 19; transform: translate3d(0px, 0px, 0px) scale(1);"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47359" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-244px, -69px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47359(1)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-244px, -325px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47360" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(12px, -325px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47360(1)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(12px, -69px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47359(2)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-244px, -581px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47360(2)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(12px, -581px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47358" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-500px, -325px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47361" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(268px, -325px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47358(1)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-500px, -69px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47361(1)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(268px, -69px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47359(3)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-244px, 187px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47360(3)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(12px, 187px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47358(2)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-500px, -581px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47361(2)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(268px, -581px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47358(3)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-500px, 187px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47361(3)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(268px, 187px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47357" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-756px, -325px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47362" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(524px, -325px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47357(1)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-756px, -69px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47362(1)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(524px, -69px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47357(2)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-756px, -581px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47362(2)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(524px, -581px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47357(3)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-756px, 187px, 0px); opacity: 1;"><img alt="" src="./NAVI — Navigation Assistant for Visitor Interaction_files/47362(3)" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(524px, 187px, 0px); opacity: 1;"></div></div></div><div class="leaflet-pane leaflet-overlay-pane"><svg pointer-events="none" class="leaflet-zoom-animated" width="0" height="0" viewBox="0 0 0 0" style="transform: translate3d(0px, 0px, 0px);"><g><path class="leaflet-interactive" stroke="var(--bad)" stroke-opacity="1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" fill="none" d="M2 2L2 -2L-2 -2L-2 2z"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--faint)" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--warn)" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="var(--warn)" fill-opacity="0.55" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path><path class="leaflet-interactive" stroke="var(--text)" stroke-opacity="1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="var(--panel)" fill-opacity="1" fill-rule="evenodd" d="M0 0"></path></g></svg></div><div class="leaflet-pane leaflet-shadow-pane"></div><div class="leaflet-pane leaflet-marker-pane"><div class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -9px; margin-top: -9px; width: 17px; height: 17px; transform: translate3d(-132px, 88px, 0px); z-index: 488;"><div class="pad-ico">1</div></div><div class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -9px; margin-top: -9px; width: 17px; height: 17px; transform: translate3d(-74px, -28px, 0px); z-index: 372;"><div class="pad-ico">2</div></div><div class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -9px; margin-top: -9px; width: 17px; height: 17px; transform: translate3d(0px, 34px, 0px); z-index: 434;"><div class="pad-ico">3</div></div><div class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -9px; margin-top: -9px; width: 17px; height: 17px; transform: translate3d(-148px, -55px, 0px); z-index: 345;"><div class="pad-ico">4</div></div><div class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -9px; margin-top: -9px; width: 17px; height: 17px; transform: translate3d(-62px, 97px, 0px); z-index: 497;"><div class="pad-ico">5</div></div><div class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -9px; margin-top: -9px; width: 17px; height: 17px; transform: translate3d(225px, -107px, 0px); z-index: 293;"><div class="pad-ico">6</div></div><div class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -11px; margin-top: -11px; width: 22px; height: 22px; transform: translate3d(-132px, 88px, 0px); z-index: 988;"><div class="drone-ico" id="dIco">✈</div></div></div><div class="leaflet-pane leaflet-tooltip-pane"></div><div class="leaflet-pane leaflet-popup-pane"></div><div class="leaflet-proxy leaflet-zoom-animated" style="transform: translate3d(1.21241e+07px, 7.78503e+06px, 0px) scale(32768);"></div></div><div class="leaflet-control-container"><div class="leaflet-top leaflet-left"><div class="leaflet-control-zoom leaflet-bar leaflet-control"><a class="leaflet-control-zoom-in" href="file:///Users/sayanjeetdas/Library/Containers/net.whatsapp.WhatsApp/Data/tmp/documents/3839610E-33F1-4553-A29B-92EE8C43A234/navi_app.html#" title="Zoom in" role="button" aria-label="Zoom in" aria-disabled="false"><span aria-hidden="true">+</span></a><a class="leaflet-control-zoom-out" href="file:///Users/sayanjeetdas/Library/Containers/net.whatsapp.WhatsApp/Data/tmp/documents/3839610E-33F1-4553-A29B-92EE8C43A234/navi_app.html#" title="Zoom out" role="button" aria-label="Zoom out" aria-disabled="false"><span aria-hidden="true">−</span></a></div></div><div class="leaflet-top leaflet-right"></div><div class="leaflet-bottom leaflet-left"></div><div class="leaflet-bottom leaflet-right"><div class="leaflet-control-attribution leaflet-control"><a href="https://leafletjs.com/" title="A JavaScript library for interactive maps"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" class="leaflet-attribution-flag"><path fill="#4C7BE1" d="M0 0h12v4H0z"></path><path fill="#FFD500" d="M0 4h12v3H0z"></path><path fill="#E0BC00" d="M0 7h12v1H0z"></path></svg> Leaflet</a> <span aria-hidden="true">|</span> Imagery © Esri</div></div></div></div></div>
+    </section>
+    <section class="page" id="pg-planner"></section>
+    <section class="page" id="pg-mission"></section>
+    <section class="page" id="pg-fleet"></section>
+    <section class="page" id="pg-sim"></section>
+    <section class="page" id="pg-safety"></section>
+    <section class="page" id="pg-dests"></section>
+    <section class="page" id="pg-stats"></section>
+    <section class="page" id="pg-about"></section>
+    <section class="page" id="pg-settings"></section>
+  </main>
+</div>
+
+<aside id="drawer" aria-label="Notifications">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+    <h2 style="flex:1">Notifications</h2>
+    <button class="btn sm" style="width:auto" onclick="clearNotes()">Clear</button>
+  </div>
+  <div id="noteList"><div class="nrow">
+    <b class="ok">SYSTEM ONLINE</b><span>Simulation mode. No aircraft connected.</span><br>
+    <time>1:13:47 AM</time></div></div>
+</aside>
+
+<!-- ═════════ VISITOR MODE ═════════ -->
+<div id="visitor">
+  <div class="vtop">
+    <svg width="22" height="22" viewBox="0 0 40 40" aria-hidden="true">
+      <path d="M20 3 L34 31 L20 24 L6 31 Z" fill="none" stroke="var(--acc)" stroke-width="2.6" stroke-linejoin="round"></path><circle cx="20" cy="24" r="3" fill="var(--acc)"></circle>
+    </svg>
+    <b style="flex:1">NAVI</b>
+    <button class="btn sm" style="width:auto" onclick="toggleTheme()">◐</button>
+    <button class="btn sm" style="width:auto" onclick="exitVisitor()">Exit</button>
+  </div>
+  <div class="vbody" id="vbody"></div>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+<div id="modal" role="dialog" aria-modal="true"><div class="sheet" id="sheet"></div></div>
+
+<script src="./NAVI — Navigation Assistant for Visitor Interaction_files/leaflet.min.js"></script>
+<script>
+"use strict";
+const D = {"centre":[12.8425,80.156],"zoom":16,"boundary":[[12.840702,80.1526806],[12.8385517,80.154826],[12.8396092,80.1558058],[12.8401099,80.1553881],[12.840879,80.1557422],[12.8405814,80.1566147],[12.8411813,80.1568214],[12.8413951,80.1575194],[12.8449237,80.1593131],[12.8438046,80.1615273],[12.8447105,80.1621227],[12.8475158,80.158937],[12.8475033,80.1585212],[12.8461164,80.1577707],[12.8456512,80.1579503],[12.8454202,80.1584002],[12.843701,80.1578369],[12.8444305,80.1562422],[12.8448295,80.154495],[12.844835,80.1533568],[12.8451601,80.153059],[12.845399,80.1521376],[12.8454114,80.1517021],[12.8454527,80.1509826],[12.844727,80.1507363],[12.844504,80.1513622],[12.8441438,80.1513029],[12.8435549,80.1511947],[12.8435099,80.1513202],[12.8434015,80.1522483],[12.8433235,80.1525944],[12.8425687,80.1524301],[12.842252,80.1523845],[12.8419148,80.1530057],[12.8414424,80.1529598],[12.8409513,80.1528107]],"nodes":[[7,12.8436541,80.1528137,[17,128,274]],[8,12.8429761,80.1526345,[9,128]],[9,12.8427623,80.1526228,[8,10]],[10,12.8425157,80.1526914,[9,221,261,273]],[11,12.8421345,80.1529286,[12,221]],[12,12.8420145,80.1530719,[11,13]],[13,12.8419699,80.153179,[12,14,251]],[14,12.841869,80.1533703,[13,15]],[15,12.8417996,80.1534425,[14,116]],[16,12.8416888,80.153604,[82,116,219,220]],[17,12.8438783,80.1528768,[7,18,215]],[18,12.8440284,80.1529878,[17,19]],[19,12.8442042,80.1531236,[18,139]],[20,12.8444152,80.1533642,[21,139,258]],[21,12.8444676,80.1535889,[20,254]],[22,12.8445186,80.1538509,[23,254]],[23,12.8445656,80.1541202,[22,145]],[24,12.8443856,80.1549466,[25,144]],[25,12.8441361,80.1553812,[24,206,209]],[26,12.8439777,80.155748,[72,206]],[27,12.8404752,80.1546584,[28,44]],[28,12.8403069,80.1547052,[27,29]],[29,12.8400694,80.1547208,[28,30]],[30,12.8399214,80.1547098,[29,31]],[31,12.839878,80.1547041,[30,106,198]],[32,12.8392345,80.1545757,[33,198,275]],[33,12.8387746,80.1544518,[32,34]],[34,12.8385732,80.154371,[33,186,187]],[35,12.8413329,80.1544649,[123,269]],[36,12.8412435,80.1547935,[37,269]],[37,12.8412371,80.1549134,[36,38]],[38,12.8412503,80.1550618,[37,151]],[39,12.8415778,80.1557142,[151,228]],[40,12.8417882,80.155996,[57,228]],[41,12.8408332,80.1537898,[42,118]],[42,12.8407399,80.1542265,[41,43]],[43,12.8406742,80.1544183,[42,44]],[44,12.8405961,80.1546207,[27,43,103]],[45,12.8425388,80.1534739,[54,262,265]],[46,12.8454587,80.1519406,[197,256]],[47,12.8421199,80.1560652,[48,57]],[48,12.8421985,80.1557986,[47,267]],[49,12.842586,80.1544763,[225,267]],[50,12.8430861,80.1544099,[142,224,225]],[51,12.8432225,80.1542505,[223,224]],[52,12.8433126,80.1539324,[133,223]],[53,12.843272,80.1534487,[54,213,241]],[54,12.8433056,80.1532669,[45,53,55]],[55,12.8433276,80.153076,[54,56,260]],[56,12.8433316,80.1529551,[55,128]],[57,12.8420097,80.1562307,[40,47,58,222]],[58,12.842007,80.1562744,[57,59,226]],[59,12.8421726,80.1564775,[58,60,155]],[60,12.8423244,80.1565657,[59,61]],[61,12.8427153,80.1567474,[60,62]],[62,12.8427842,80.1567761,[61,63]],[63,12.8428344,80.1567966,[62,64,80]],[64,12.842647,80.1572044,[63,160]],[65,12.8434348,80.1580749,[66,217]],[66,12.8438056,80.158186,[65,67]],[67,12.8441043,80.1582849,[66,70]],[68,12.8447352,80.1608183,[69]],[69,12.8447813,80.1607294,[68,194]],[70,12.8445827,80.1584146,[67,71]],[71,12.8451489,80.1585666,[70,216]],[72,12.8438973,80.1559604,[26,73]],[73,12.8438378,80.1560868,[72,74]],[74,12.8436431,80.1563344,[73,75]],[75,12.8435053,80.1564804,[74,76,233]],[76,12.8434588,80.1566271,[75,77]],[77,12.8433421,80.1568789,[76,78]],[78,12.8433009,80.1569566,[77,79,102]],[79,12.843259,80.1569597,[78,80]],[80,12.8432081,80.156956,[63,79]],[81,12.8451259,80.1526988,[159,258]],[82,12.8416664,80.1536908,[16,84,212,220]],[83,12.8416274,80.1540121,[84,99]],[84,12.8416678,80.1540139,[82,83,85]],[85,12.8417027,80.1540279,[84,86]],[86,12.8417315,80.1540525,[85,87]],[87,12.8417513,80.1540851,[86,88]],[88,12.84176,80.1541222,[87,89]],[89,12.8417568,80.1541603,[88,90]],[90,12.8417421,80.1541955,[89,91]],[91,12.8417172,80.1542241,[90,92]],[92,12.8416848,80.1542433,[91,93]],[93,12.841648,80.1542512,[92,94]],[94,12.8416107,80.1542468,[93,200]],[95,12.8415294,80.1541651,[96,124]],[96,12.8415249,80.154124,[95,97]],[97,12.8415342,80.1540839,[96,98]],[98,12.8415564,80.1540493,[97,99]],[99,12.8415887,80.1540243,[83,98]],[100,12.8417758,80.1564445,[226,227]],[101,12.8434011,80.1579033,[217,252]],[102,12.843204,80.1572789,[78,160,252]],[103,12.8407742,80.1545711,[44,104]],[104,12.841108,80.1544637,[103,105]],[105,12.8412893,80.1544006,[104,123]],[106,12.8398808,80.1548037,[31,218]],[107,12.839988,80.1549407,[218]],[109,12.8407599,80.1532753,[111,125]],[110,12.8405571,80.1530029,[111,171,172]],[111,12.8406492,80.1531595,[109,110]],[112,12.8411252,80.1534887,[113,125]],[113,12.8412778,80.1535423,[112,114]],[114,12.8414499,80.1535427,[113,115]],[115,12.8415614,80.153539,[114,119,219]],[116,12.8417361,80.1535015,[15,16,219]],[117,12.8408588,80.1536833,[118,126]],[118,12.8408449,80.1537383,[41,117]],[119,12.8415582,80.1536098,[115,120,220]],[120,12.8414767,80.1535991,[119,121]],[121,12.8412824,80.1536036,[120,122]],[122,12.8411136,80.1535447,[121,126]],[123,12.8413956,80.1543605,[35,105,124]],[124,12.8415474,80.1542022,[95,123,200]],[125,12.8409411,80.1534102,[109,112,126]],[126,12.8409155,80.1534523,[117,122,125,188]],[127,12.840727,80.1523095,[183]],[128,12.843337,80.152702,[7,8,56,131]],[129,12.8434247,80.1521051,[131,191]],[130,12.8435224,80.1514405,[191,195]],[131,12.8433986,80.1522971,[128,129]],[132,12.8441841,80.1524271,[214,215]],[133,12.8433383,80.1538346,[52,134,213]],[134,12.843592,80.1541737,[133,135,239]],[135,12.8436901,80.1542134,[134,147]],[136,12.8440767,80.153914,[137,147]],[137,12.8442791,80.1536214,[136,138]],[138,12.8441701,80.1533271,[137,139]],[139,12.8442906,80.1532153,[19,20,138]],[140,12.8423764,80.155959,[141,222]],[141,12.8430163,80.1562196,[140,231,233]],[142,12.8433322,80.154574,[50,143,239]],[143,12.8433063,80.1548319,[142,201,209]],[144,12.8444911,80.1547622,[24,145]],[145,12.8445271,80.1545019,[23,144,146]],[146,12.8439964,80.1543173,[145,147]],[147,12.8438019,80.1542231,[135,136,146]],[148,12.8408746,80.1553165,[210]],[149,12.8410878,80.1553499,[150,210]],[150,12.8411789,80.1552786,[149,151,277]],[151,12.8412996,80.1552245,[38,39,150]],[152,12.8409605,80.1559867,[153,210]],[153,12.8409284,80.1561842,[152,154,156]],[154,12.8409172,80.1563019,[153,192,227]],[155,12.8419374,80.1569088,[59]],[156,12.8409902,80.1561951,[153]],[157,12.8445377,80.1520952,[158,214,276]],[158,12.8447775,80.1521074,[157,159]],[159,12.8451996,80.1525345,[81,158,256]],[160,12.8430877,80.1574106,[64,102,232]],[161,12.8402951,80.1530654,[162,178]],[162,12.8402814,80.1530199,[161,163]],[163,12.8402833,80.1529723,[162,164]],[164,12.8403006,80.1529281,[163,165,190]],[165,12.8403313,80.1528923,[164,166]],[166,12.8403699,80.1528697,[165,167,184]],[167,12.8404136,80.1528608,[166,168]],[168,12.8404578,80.1528664,[167,169]],[169,12.8404979,80.1528861,[168,170]],[170,12.8405298,80.1529177,[169,171]],[171,12.8405502,80.1529581,[110,170]],[172,12.8405495,80.1530476,[110,173]],[173,12.8405285,80.1530876,[172,174]],[174,12.840496,80.1531187,[173,175]],[175,12.8404534,80.1531383,[174,176,188]],[176,12.8404069,80.1531423,[175,177]],[177,12.8403617,80.1531303,[176,178]],[178,12.840323,80.1531036,[161,177]],[183,12.8403432,80.1526798,[127,184,248]],[184,12.8402822,80.1527415,[166,183,190]],[185,12.8400956,80.1529363,[186,190]],[186,12.8395725,80.1534105,[34,185]],[187,12.8383151,80.1545923,[34]],[188,12.8406082,80.153196,[126,175]],[189,12.8437805,80.1518498,[191]],[190,12.8402051,80.1528259,[164,184,185]],[191,12.8434656,80.1518029,[129,130,189]],[192,12.8409139,80.1563651,[154]],[193,12.8449921,80.159286,[194,211]],[194,12.844516,80.160612,[69,193]],[195,12.8436238,80.1513465,[130,230]],[196,12.8446635,80.1515877,[197,230]],[197,12.8453882,80.1517295,[46,196]],[198,12.8396001,80.1546613,[31,32,199]],[199,12.8395527,80.1549195,[198]],[200,12.841579,80.1542295,[94,124]],[201,12.8433295,80.1551207,[143,202]],[202,12.8434781,80.1552663,[201,203]],[203,12.8436566,80.1553715,[202,204,209]],[204,12.8437034,80.1554267,[203,205,207]],[205,12.8439334,80.1555348,[204,206]],[206,12.8440261,80.155594,[25,26,205]],[207,12.843632,80.1555898,[204,208]],[208,12.8434112,80.1559897,[207,233,237]],[209,12.8437265,80.1551137,[25,143,203]],[210,12.8410551,80.1554044,[148,149,152]],[211,12.8452441,80.1587411,[193,216]],[212,12.8417279,80.1536756,[82,263]],[213,12.8432763,80.1536517,[53,133]],[214,12.8442733,80.1523408,[132,157,229]],[215,12.8441439,80.1524862,[17,132,234]],[216,12.8452418,80.158614,[71,211]],[217,12.8433908,80.1579891,[65,101]],[218,12.8399301,80.154898,[106,107]],[219,12.8416556,80.1535247,[16,115,116]],[220,12.841625,80.1536422,[16,82,119]],[221,12.8422754,80.1528154,[10,11]],[222,12.8421863,80.156074,[57,140]],[223,12.8432815,80.1541026,[51,52]],[224,12.8431543,80.1543426,[50,51]],[225,12.8430121,80.1544276,[49,50]],[226,12.8418605,80.1564268,[58,100,271]],[227,12.8416545,80.1564313,[100,154]],[228,12.841684,80.155853,[39,40]],[229,12.8442434,80.1522694,[214,276]],[230,12.8443763,80.1514521,[195,196,276]],[231,12.8429546,80.1564078,[141]],[232,12.8430622,80.1574571,[160]],[233,12.8432159,80.1563189,[75,141,208]],[234,12.844236,80.1525537,[215,235]],[235,12.8443474,80.1524253,[234,236]],[236,12.8444137,80.1524796,[235]],[237,12.8433426,80.1559467,[208,238]],[238,12.8433127,80.1559951,[237]],[239,12.8433665,80.1545205,[134,142,240]],[240,12.8435184,80.1546257,[239]],[241,12.8435816,80.1534207,[53]],[248,12.840554,80.1527041,[183,249]],[249,12.8407768,80.1527528,[248,250]],[250,12.8411487,80.1528339,[249]],[251,12.8418124,80.1531449,[13]],[252,12.8435428,80.1574958,[101,102,253]],[253,12.8436615,80.1577384,[252]],[254,12.8444901,80.1537044,[21,22,255]],[255,12.8446755,80.1536701,[254]],[256,12.8453433,80.1522364,[46,159,257]],[257,12.8452759,80.1522029,[256]],[258,12.8448183,80.1529935,[20,81,259]],[259,12.8448933,80.1530764,[258]],[260,12.8430822,80.1531385,[55]],[261,12.8425682,80.1529173,[10]],[262,12.8425081,80.1533385,[45]],[263,12.8421999,80.1535582,[212,264,265]],[264,12.8421659,80.1534401,[263]],[265,12.8423694,80.1535161,[45,263,266]],[266,12.8424137,80.1537627,[265]],[267,12.8424064,80.1550812,[48,49,268]],[268,12.8422521,80.1550371,[267]],[269,12.8412718,80.1546417,[35,36,270]],[270,12.8414053,80.1546851,[269]],[271,12.841708,80.1567298,[226,272]],[272,12.8414934,80.1566256,[271]],[273,12.8424957,80.1525751,[10]],[274,12.8436845,80.1526133,[7]],[275,12.8392805,80.1543384,[32]],[276,12.8442878,80.1519856,[157,229,230]],[277,12.8409057,80.1551476,[150]]],"dests":[["2nd Gate",[33],"Visitor Facilities"],["A Block hostel",[236],"Hostel"],["Academic Block 1",[241],"Academic"],["Academic Block 2",[231],"Academic"],["Academic Block 3",[240],"Academic"],["Academic Block 4",[238],"Academic"],["Academic Block 5",[156],"Academic"],["Admin Block",[41],"Academic"],["Alpha Block",[272],"Academic"],["B Block Hostel",[155],"Hostel"],["Basketball Court",[262],"Sports"],["C Block Hostel",[232],"Hostel"],["Cricket Ground",[268],"Sports"],["D1 Block Hostel",[189],"Hostel"],["D2 Block Hostel",[189],"Hostel"],["E Block Hostel",[68],"Hostel"],["Football Ground",[261],"Sports"],["Gazebo",[270],"Visitor Facilities"],["Ground",[266],"Sports"],["Guest House",[273],"Visitor Facilities"],["GymKhaana",[274],"Sports"],["Mahatma Gandhi Auditorium",[199],"Auditorium"],["Main Gate",[111,188],"Visitor Facilities"],["North Square",[136,146],"Academic"],["Omega Block",[275],"Academic"],["Sigma Block",[255],"Academic"],["Site Office",[148],"Administration"],["Staff Parking 1",[257],"Visitor Facilities"],["Staff Parking 2",[259],"Visitor Facilities"],["Student's Parking 2",[107,277],"Visitor Facilities"],["Student's parking",[250,251],"Visitor Facilities"],["Swimming Pool",[192],"Sports"],["Tennis Court",[260],"Sports"],["Transport Office",[277],"Administration"],["VIT-SEDAXIS",[253],"Laboratory"],["volleyball Court",[264],"Sports"]],"pads":[[111,"Gate Pad"],[50,"Central Pad"],[40,"East Pad"],[7,"North-West Pad"],[27,"South Pad"],[68,"E Block Pad"]],"legLimit":350,"walkSpeed":0.8,"leadTarget":10,"cruise":1.4,"defaultAlt":15,"batteryPerMin":9,"fenceBuffer":40,"reserve":25,"stats":{"areaHa":42.2,"networkKm":8.24,"segments":303,"perimeterM":4266,"surveyedNodes":278}};
+
+/* ═══════════ storage (degrades if blocked) ═══════════ */
+const store = {
+  get(k,f){ try{ const v=localStorage.getItem(k); return v===null?f:JSON.parse(v); }catch{ return f; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch{} }
+};
+
+/* ═══════════ geometry ═══════════ */
+const Rm=6371000, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
+function metres(a,b){
+  const dLa=rad(b[0]-a[0]), dLo=rad(b[1]-a[1]);
+  const h=Math.sin(dLa/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dLo/2)**2;
+  return 2*Rm*Math.asin(Math.sqrt(h));
+}
+function bearing(a,b){
+  const y=Math.sin(rad(b[1]-a[1]))*Math.cos(rad(b[0]));
+  const x=Math.cos(rad(a[0]))*Math.sin(rad(b[0]))-Math.sin(rad(a[0]))*Math.cos(rad(b[0]))*Math.cos(rad(b[1]-a[1]));
+  return (deg(Math.atan2(y,x))+360)%360;
+}
+const lerp=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+const fmtT=s=>`${Math.floor(s/60)}m ${String(Math.round(s%60)).padStart(2,"0")}s`;
+
+const LAT0=12.8425, KLAT=110574, KLON=111320*Math.cos(rad(LAT0));
+const xy=p=>[(p[1]-D.boundary[0][1])*KLON,(p[0]-D.boundary[0][0])*KLAT];
+const BP=D.boundary.map(xy);
+function inFence(pt){
+  const [x,y]=xy(pt); let c=false;
+  for(let i=0,n=BP.length;i<n;i++){
+    const [x1,y1]=BP[i],[x2,y2]=BP[(i+1)%n];
+    if((y1>y)!==(y2>y)&&x<(x2-x1)*(y-y1)/(y2-y1)+x1) c=!c;
+  } return c;
+}
+function fenceDist(pt){
+  const [x,y]=xy(pt); let b=Infinity;
+  for(let i=0,n=BP.length;i<n;i++){
+    const [x1,y1]=BP[i],[x2,y2]=BP[(i+1)%n];
+    const dx=x2-x1,dy=y2-y1,L=dx*dx+dy*dy;
+    const t=L===0?0:Math.max(0,Math.min(1,((x-x1)*dx+(y-y1)*dy)/L));
+    b=Math.min(b,Math.hypot(x-(x1+t*dx),y-(y1+t*dy)));
+  } return b;
+}
+const breached=pt=>!inFence(pt)&&fenceDist(pt)>D.fenceBuffer;
+
+/* ═══════════ graph ═══════════ */
+const N={},ADJ={};
+D.nodes.forEach(([id,lat,lon,cs])=>{N[id]=[lat,lon];ADJ[id]=cs;});
+const PADNAME=Object.fromEntries(D.pads);
+const DESTS=D.dests.map(([name,ents,cat])=>({name,ents,cat}));
+const CATS=[...new Set(DESTS.map(d=>d.cat))].sort();
+
+function dijkstra(src){
+  const dist={[src]:0},prev={},seen=new Set(),pq=[[0,src]];
+  while(pq.length){
+    pq.sort((a,b)=>a[0]-b[0]);
+    const [d,u]=pq.shift();
+    if(seen.has(u))continue; seen.add(u);
+    for(const v of ADJ[u]||[]){
+      const nd=d+metres(N[u],N[v]);
+      if(nd<(dist[v]??Infinity)){dist[v]=nd;prev[v]=u;pq.push([nd,v]);}
+    }
+  } return {dist,prev};
+}
+function pathOf(prev,s,t){const p=[t];while(p[0]!==s){if(!(p[0]in prev))return null;p.unshift(prev[p[0]]);}return p;}
+function pathLen(p){let m=0;for(let i=1;i<p.length;i++)m+=metres(N[p[i-1]],N[p[i]]);return m;}
+function splitLegs(p){
+  const out=[];let leg=[p[0]],run=0;
+  for(let i=1;i<p.length;i++){
+    const st=metres(N[p[i-1]],N[p[i]]);
+    if(run+st>D.legLimit&&leg.length>1){out.push({nodes:[...leg],m:run});leg=[p[i-1]];run=0;}
+    leg.push(p[i]);run+=st;
+  } out.push({nodes:leg,m:run}); return out;
+}
+/* cumulative distance along a coordinate list, for pacing */
+function cumul(coords){const c=[0];for(let i=1;i<coords.length;i++)c.push(c[i-1]+metres(coords[i-1],coords[i]));return c;}
+function atDistance(coords,cum,d){
+  d=Math.max(0,Math.min(d,cum[cum.length-1]));
+  let i=1; while(i<cum.length&&cum[i]<d)i++;
+  if(i>=cum.length)return{pos:coords[coords.length-1],idx:coords.length-1,hdg:0};
+  const t=(d-cum[i-1])/Math.max(cum[i]-cum[i-1],.001);
+  return{pos:lerp(coords[i-1],coords[i],t),idx:i,hdg:bearing(coords[i-1],coords[i])};
+}
+
+const padDist={};
+D.pads.forEach(([id])=>{padDist[id]=dijkstra(id).dist;});
+function nearestPad(ents){
+  let best=[Infinity,D.pads[0][0]];
+  D.pads.forEach(([id])=>{ents.forEach(e=>{const d=padDist[id][e];if(d!=null&&d<best[0])best=[d,id];});});
+  return best;
+}
+
+/* ═══════════ telemetry abstraction ═══════════ */
+const Telemetry={
+  listeners:[],
+  state:{droneId:"NAVI-01",model:"S500 quadcopter",fc:"Pixhawk 2.4.8",
+    companion:"Jetson Orin NX",pos:N[D.pads[0][0]],altitude:0,speed:0,heading:0,
+    battery:100,voltage:12.6,satellites:0,gpsAccuracy:9.9,rtk:"NO FIX",signal:0,
+    link:"OFFLINE",state:"IDLE",safety:"SAFE",leadGap:0,visitorSpeed:0,
+    visitorPos:null,progress:0,leg:0,legs:0,wp:"—",eta:0,session:0},
+  use(p){p.attach(s=>{Object.assign(this.state,s);this.listeners.forEach(f=>f(this.state));});},
+  on(f){this.listeners.push(f);}
+};
+const T=Telemetry;
+const SimulatedTelemetry={emit:null,attach(f){this.emit=f;f({});},push(p){this.emit&&this.emit(p);}};
+Telemetry.use(SimulatedTelemetry);
+const push=p=>SimulatedTelemetry.push(p);
+
+/* ═══════════ notifications ═══════════ */
+const notes=[];
+function notify(title,msg,kind){
+  notes.unshift({title,msg,kind:kind||"",t:new Date()});
+  if(notes.length>50)notes.pop();
+  const b=document.getElementById("nBadge");
+  b.style.display="flex"; b.textContent=Math.min(notes.length,99);
+  renderNotes();
+  const el=document.createElement("div");
+  el.className="toast "+(kind||"");
+  el.innerHTML=`<b>${title}</b><span>${msg}</span>`;
+  document.getElementById("toasts").appendChild(el);
+  setTimeout(()=>el.remove(),4200);
+}
+function renderNotes(){
+  const el=document.getElementById("noteList");
+  el.innerHTML=notes.length?notes.map(n=>`<div class="nrow">
+    <b class="${n.kind}">${n.title}</b><span>${n.msg}</span><br>
+    <time>${n.t.toLocaleTimeString()}</time></div>`).join("")
+    :`<div class="empty"><b>NO NOTIFICATIONS</b>Events appear here during a mission.</div>`;
+}
+function clearNotes(){notes.length=0;renderNotes();document.getElementById("nBadge").style.display="none";}
+
+/* ═══════════ modal ═══════════ */
+function confirmAction(title,body,label,fn,danger){
+  const m=document.getElementById("modal");
+  document.getElementById("sheet").innerHTML=`<h2>${title}</h2><p>${body}</p>
+    <div class="row"><button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn ${danger?"danger":"pri"}" id="okBtn">${label}</button></div>`;
+  m.classList.add("on");
+  document.getElementById("okBtn").onclick=()=>{closeModal();fn();};
+  document.getElementById("okBtn").focus();
+}
+function closeModal(){document.getElementById("modal").classList.remove("on");}
+document.getElementById("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal();});
+addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();document.getElementById("drawer").classList.remove("on");}});
+
+/* ═══════════ map state (declared before any use) ═══════════ */
+let map=null, baseNow=null, baseKey=store.get("navi.base","sat");
+let droneM=null, visitorM=null, segCount=0, riskCount=0;
+const LG={};
+
+/* ═══════════ theme ═══════════ */
+function applyTheme(t){
+  document.documentElement.dataset.theme=t;
+  store.set("navi.theme",t);
+  if(map) setBase(baseKey);   // NOT window.map — that is the #map DIV
+}
+function toggleTheme(){
+  applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");
+}
+applyTheme(store.get("navi.theme","dark"));
+
+/* ═══════════ map ═══════════ */
+function initMap(){
+  if(map)return;
+  map=L.map("map",{zoomControl:true,attributionControl:true}).setView(D.centre,D.zoom);
+  ["fence","paths","dests","pads","wp","route","trail","lead","drone","visitor","risk"]
+    .forEach(k=>{LG[k]=L.layerGroup().addTo(map);});
+  setBase(baseKey);
+
+  L.polygon(D.boundary,{color:"var(--bad)",weight:1.6,dashArray:"7 6",fill:false})
+    .addTo(LG.fence).bindTooltip("Campus boundary — OSM way 336095563 · © OpenStreetMap contributors, ODbL 1.0",{sticky:true});
+
+  const seen=new Set();
+  D.nodes.forEach(([id])=>(ADJ[id]||[]).forEach(v=>{
+    const k=Math.min(id,v)+"-"+Math.max(id,v);
+    if(seen.has(k)||!N[v])return; seen.add(k);
+    L.polyline([N[id],N[v]],{color:"var(--faint)",weight:2,opacity:.65}).addTo(LG.paths);
+  }));
+  segCount=seen.size;
+
+  D.nodes.forEach(([id,lat,lon])=>{
+    const d=fenceDist([lat,lon]);
+    if(inFence([lat,lon])&&d<25){
+      riskCount++;
+      L.circleMarker([lat,lon],{radius:4,color:"var(--warn)",fillColor:"var(--warn)",
+        fillOpacity:.55,weight:1}).addTo(LG.risk)
+        .bindTooltip(`Node ${id} · ${d.toFixed(1)} m from boundary`,{direction:"top"});
+    }
+  });
+
+  DESTS.forEach(d=>d.ents.forEach(e=>{
+    if(!N[e])return;
+    L.circleMarker(N[e],{radius:5.5,color:"var(--text)",fillColor:"var(--panel)",
+      fillOpacity:1,weight:2}).addTo(LG.dests)
+      .bindTooltip(`${d.name} · ${d.cat}`,{direction:"top"})
+      .on("click",()=>selectDest(d.name));
+  }));
+
+  D.pads.forEach(([id,nm],i)=>{
+    if(!N[id])return;
+    L.marker(N[id],{icon:L.divIcon({className:"",html:`<div class="pad-ico">${i+1}</div>`,
+      iconSize:[17,17],iconAnchor:[9,9]}),zIndexOffset:400}).addTo(LG.pads)
+      .bindTooltip(`${nm} · node ${id}`,{direction:"top"})
+      .on("click",()=>{state.pad=id;renderAll();});
+  });
+
+  droneM=L.marker(N[D.pads[0][0]],{icon:L.divIcon({className:"",
+    html:`<div class="drone-ico" id="dIco">✈</div>`,iconSize:[22,22],iconAnchor:[11,11]}),
+    zIndexOffset:900}).addTo(LG.drone);
+  visitorM=L.marker(N[D.pads[0][0]],{icon:L.divIcon({className:"",
+    html:`<div class="visitor-ico"></div>`,iconSize:[13,13],iconAnchor:[6,6]}),
+    zIndexOffset:850});
+
+  renderLayerPanel();
+}
+const BASES={};
+function setBase(k){
+  baseKey=k; store.set("navi.base",k);
+  if(!map) return;
+  const dark=document.documentElement.dataset.theme==="dark";
+  if(baseNow){map.removeLayer(baseNow);baseNow=null;}
+  const defs={
+    sat:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}","Imagery &copy; Esri",1],
+    streets:["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png","&copy; OpenStreetMap contributors",1],
+    dark:["https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png","&copy; OpenStreetMap contributors &copy; CARTO",1],
+    light:["https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png","&copy; OpenStreetMap contributors &copy; CARTO",1]
+  };
+  const auto = k==="auto" ? (dark?"dark":"light") : k;
+  const [url,attr,op]=defs[auto]||defs.sat;
+  baseNow=L.tileLayer(url,{maxZoom:19,attribution:attr,opacity:op}).addTo(map);
+  baseNow.bringToBack();
+  const sel=document.getElementById("baseSel"); if(sel)sel.value=k;
+}
+const LAYERS=[
+  ["Campus",[["fence","Campus Boundary","var(--bad)"],["paths","Pathways &amp; Roads","var(--faint)"],
+             ["dests","Destinations","var(--text)"],["pads","Launch Pads","var(--warn)"],
+             ["wp","Waypoints","var(--acc)"]]],
+  ["Drone",[["drone","Drone Position","var(--acc)"],["route","Planned Route","var(--acc)"],
+            ["trail","Flown Trail","var(--warn)"],["visitor","Visitor Position","var(--ok)"],
+            ["lead","Lead Distance","var(--ok)"]]],
+  ["Safety",[["risk","Boundary Risk Points","var(--warn)"]]]
+];
+function renderLayerPanel(){
+  document.getElementById("layerPanel").innerHTML=
+    `<h3>BASE MAP</h3>
+     <select id="baseSel" onchange="setBase(this.value)" aria-label="Base map">
+       <option value="sat">Satellite</option><option value="streets">Streets</option>
+       <option value="dark">Dark</option><option value="light">Light</option>
+       <option value="auto">Match theme</option></select>
+     <div style="height:10px"></div>`+
+    LAYERS.map(([g,rows])=>`<h3>${g.toUpperCase()}</h3>`+rows.map(([k,l,c])=>
+      `<label class="lay"><input type="checkbox" id="L-${k}" ${k==="wp"||k==="lead"?"":"checked"}
+        onchange="toggleLayer('${k}',this.checked)"><i class="sw" style="background:${c}"></i>${l}</label>`
+    ).join("")).join("");
+  toggleLayer("wp",false); toggleLayer("lead",false);
+  document.getElementById("baseSel").value=baseKey;
+}
+function toggleLayer(k,on){ if(!map||!LG[k])return; on?LG[k].addTo(map):map.removeLayer(LG[k]); }
+function fixMap(){ if(map)map.invalidateSize(); }
+
+/* ═══════════ app state ═══════════ */
+const state={
+  pad:D.pads[0][0], dest:null, plan:null, page:"overview",
+  favs:store.get("navi.favs",[]), recent:store.get("navi.recent",[]),
+  filter:"All", search:""
+};
+
+function selectDest(name){
+  const d=DESTS.find(x=>x.name===name);
+  if(!d){ notify("INVALID DESTINATION",`"${name}" is not in the campus dataset.`,"bad"); return; }
+  state.dest=name;
+  const [,pad]=nearestPad(d.ents); state.pad=pad;
+  state.recent=[name,...state.recent.filter(n=>n!==name)].slice(0,5);
+  store.set("navi.recent",state.recent);
+  plan();
+  renderAll();
+}
+function plan(){
+  simStop(true);
+  if(map){ LG.route.clearLayers(); LG.wp.clearLayers(); }
+  if(!state.dest){state.plan=null;return;}
+  const d=DESTS.find(x=>x.name===state.dest);
+  if(!d){
+    state.plan=null; state.dest=null;
+    notify("INVALID DESTINATION","That destination is not in the campus dataset. Pick one from the list.","bad");
+    return;
+  }
+  const {dist,prev}=dijkstra(state.pad);
+  let best=null;
+  d.ents.forEach(e=>{ if(e in dist&&(!best||dist[e]<best[0])) best=[dist[e],e]; });
+  if(!best){state.plan=null;notify("ROUTE UNAVAILABLE",`No surveyed route to ${d.name} from ${PADNAME[state.pad]}.`,"bad");return;}
+  const p=pathOf(prev,state.pad,best[1]);
+  const coords=p.map(i=>N[i]);
+  const legs=splitLegs(p), total=pathLen(p);
+  const breach=p.filter(i=>breached(N[i]));
+  state.plan={path:p,coords,cum:cumul(coords),legs,total,dest:d,
+    node:best[1],breach,walkSec:total/D.walkSpeed,
+    battery:Math.round(Math.max(...legs.map(l=>l.m))/D.walkSpeed/60*D.batteryPerMin)};
+
+  if(map){
+    L.polyline(coords,{color:"var(--acc)",weight:5,opacity:.95}).addTo(LG.route);
+    legs.slice(0,-1).forEach(l=>{
+      const h=N[l.nodes[l.nodes.length-1]];
+      L.circleMarker(h,{radius:8,color:"var(--warn)",fillColor:"var(--panel)",fillOpacity:1,weight:3})
+        .addTo(LG.route).bindTooltip("Battery swap point",{direction:"top"});
+    });
+    p.forEach((id,i)=>L.circleMarker(N[id],{radius:3,color:"var(--acc)",fillOpacity:.8,weight:1})
+      .addTo(LG.wp).bindTooltip(`WP-${String(i).padStart(3,"0")} · node ${id}`,{direction:"top"}));
+    map.fitBounds(L.latLngBounds(coords).pad(.22));
+  }
+  if(breach.length) notify("GEOFENCE WARNING",`Route leaves the ${D.fenceBuffer} m buffer at node ${breach.join(", ")}.`,"bad");
+}
+
+/* ═══════════ simulation ═══════════ */
+const SIM={run:false,timer:null,vd:0,dd:0,t:0,trail:[],rate:4,
+  faults:{stop:false,delay:false,rtk:false,link:false,batt:false,fence:false},
+  legIdx:0,session:0};
+const STATES=["IDLE","ARMING","TAKEOFF","EN_ROUTE","PACING","HOLDING","VISITOR_LOST",
+              "RETURNING","LANDING","COMPLETE","FAILSAFE"];
+
+function simStart(){
+  if(!state.plan){notify("NO ROUTE","Select a destination and plan a route first.","warn");return;}
+  if(SIM.run)return;
+  if(!SIM.trail.length){
+    SIM.vd=0;SIM.dd=0;SIM.session=0;SIM.legIdx=0;SIM.trail=[state.plan.coords[0]];
+    push({battery:100,voltage:12.6,state:"ARMING",safety:"SAFE",link:"GOOD",signal:94});
+    notify("MISSION STARTED",`NAVI-01 has departed ${PADNAME[state.pad]}.`,"ok");
+    setTimeout(()=>push({state:"TAKEOFF",altitude:D.defaultAlt}),400);
+  }
+  SIM.run=true;
+  if(map&&visitorM) visitorM.addTo(LG.visitor);
+  push({rtk:SIM.faults.rtk?"NO FIX":"FIX",satellites:SIM.faults.rtk?4:18,
+        gpsAccuracy:SIM.faults.rtk?6.4:.02,state:"PACING"});
+  SIM.timer=setInterval(tick,100);
+  renderAll();
+}
+function simPause(){
+  SIM.run=false;clearInterval(SIM.timer);
+  push({state:"HOLDING",speed:0});
+  renderAll();
+}
+function simStop(quiet){
+  SIM.run=false;clearInterval(SIM.timer);
+  SIM.vd=0;SIM.dd=0;SIM.trail=[];SIM.legIdx=0;SIM.session=0;
+  Object.keys(SIM.faults).forEach(k=>SIM.faults[k]=false);
+  if(LG.trail)LG.trail.clearLayers();
+  if(LG.lead)LG.lead.clearLayers();
+  if(visitorM&&LG.visitor)LG.visitor.clearLayers();
+  if(!quiet){
+    push({pos:N[state.pad],altitude:0,speed:0,state:"IDLE",safety:"SAFE",battery:100,
+      rtk:"NO FIX",satellites:0,gpsAccuracy:9.9,link:"OFFLINE",signal:0,
+      leadGap:0,visitorSpeed:0,progress:0,wp:"—",session:0});
+  }
+  renderAll();
+}
+function simRestart(){ simStop(); setTimeout(simStart,120); }
+function skipWaypoint(){
+  if(!state.plan)return;
+  const c=state.plan.cum, i=atDistance(state.plan.coords,c,SIM.dd).idx;
+  SIM.dd=Math.min(c[Math.min(i,c.length-1)],c[c.length-1]);
+  notify("WAYPOINT SKIPPED",`Advanced to WP-${String(i).padStart(3,"0")}.`,"warn");
+}
+function returnToLaunch(){
+  push({state:"RETURNING",safety:"RETURN_TO_LAUNCH"});
+  notify("RETURN TO LAUNCH","NAVI-01 is returning to the launch pad.","warn");
+  SIM.returning=true;
+}
+function toggleFault(k){
+  SIM.faults[k]=!SIM.faults[k];
+  const on=SIM.faults[k];
+  const msg={
+    stop:["VISITOR STOPPED","The visitor has stopped walking."],
+    delay:["VISITOR DELAYED","Visitor walking speed reduced."],
+    rtk:["RTK WARNING","Positioning quality degraded to float."],
+    link:["TELEMETRY LOST","Link to NAVI-01 interrupted."],
+    batt:["BATTERY WARNING","NAVI-01 has reached reserve threshold."],
+    fence:["GEOFENCE BREACH","Simulated position outside the boundary buffer."]
+  }[k];
+  if(on)notify(msg[0],msg[1],k==="stop"||k==="delay"?"warn":"bad");
+  else notify(msg[0].replace("WARNING","RECOVERED").replace("LOST","RESTORED")
+              .replace("BREACH","CLEARED").replace("STOPPED","RESUMED").replace("DELAYED","NORMAL"),
+              "Condition cleared.","ok");
+  if(k==="rtk")push({rtk:on?"FLOAT":"FIX",satellites:on?7:18,gpsAccuracy:on?3.8:.02});
+  if(k==="link")push({link:on?"LOST":"GOOD",signal:on?0:94});
+  if(k==="batt")push({battery:Math.min(T.state.battery,D.reserve-2)});
+  renderAll();
+}
+
+function tick(){
+  const dt=0.1*SIM.rate, P=state.plan;
+  if(!P){simStop();return;}
+  SIM.session+=dt;
+  const total=P.cum[P.cum.length-1];
+
+  /* visitor motion */
+  let vSpeed = SIM.faults.stop ? 0 : SIM.faults.delay ? D.walkSpeed*0.45 : D.walkSpeed;
+  if(!SIM.returning) SIM.vd=Math.min(total,SIM.vd+vSpeed*dt);
+
+  /* drone paces ahead of the visitor */
+  let target = SIM.returning ? 0 : Math.min(total, SIM.vd + D.leadTarget);
+  const maxStep=D.cruise*dt;
+  SIM.dd += Math.max(-maxStep, Math.min(maxStep, target-SIM.dd));
+
+  const dv=atDistance(P.coords,P.cum,SIM.dd);
+  const vv=atDistance(P.coords,P.cum,SIM.vd);
+  const gap=SIM.dd-SIM.vd;
+
+  /* battery */
+  let batt=T.state.battery;
+  if(!SIM.faults.link) batt=Math.max(0,batt-dt*D.batteryPerMin/60);
+
+  /* safety state machine */
+  let safety="SAFE", st=T.state.state;
+  if(SIM.faults.fence || breached(dv.pos)){ safety="EMERGENCY"; st="FAILSAFE"; }
+  else if(SIM.faults.link){ safety="RETURN_TO_LAUNCH"; st="RETURNING"; }
+  else if(batt<=D.reserve||SIM.faults.batt){ safety="RETURN_TO_LAUNCH"; st="RETURNING"; }
+  else if(SIM.faults.rtk){ safety="HOLD"; st="HOLDING"; }
+  else if(SIM.faults.stop){ safety="WARNING"; st="HOLDING"; }
+  else if(SIM.returning){ safety="RETURN_TO_LAUNCH"; st="RETURNING"; }
+  else st = gap < D.leadTarget-2 ? "PACING" : "EN_ROUTE";
+
+  if(safety!=="SAFE"&&T.state.safety==="SAFE")
+    notify("SAFETY STATE CHANGE",`System entered ${safety.replace(/_/g," ")}.`,
+           safety==="EMERGENCY"?"bad":"warn");
+
+  /* which leg */
+  let acc=0,legIdx=0;
+  for(let i=0;i<P.legs.length;i++){acc+=P.legs[i].m;if(SIM.dd<=acc){legIdx=i;break;}legIdx=i;}
+  if(legIdx!==SIM.legIdx){
+    SIM.legIdx=legIdx;
+    notify("BATTERY SWAP",`Leg ${legIdx} complete. Swapping pack before leg ${legIdx+1}.`,"warn");
+    batt=100;
+  }
+
+  push({pos:dv.pos,visitorPos:vv.pos,altitude:D.defaultAlt,
+    speed:SIM.returning?D.cruise:Math.abs(target-SIM.dd)>0.02?D.cruise:vSpeed,
+    heading:dv.hdg,battery:batt,voltage:(10.8+batt/100*1.8),
+    leadGap:gap,visitorSpeed:vSpeed,state:st,safety,
+    progress:total?SIM.vd/total:0,leg:legIdx+1,legs:P.legs.length,
+    wp:"WP-"+String(dv.idx).padStart(3,"0"),
+    eta:Math.max(0,(total-SIM.vd)/Math.max(vSpeed,.05)),
+    session:SIM.session,
+    satellites:SIM.faults.rtk?7:16+Math.round(Math.sin(Date.now()/4000)*2),
+    gpsAccuracy:SIM.faults.rtk?3.8:.02+Math.random()*.01});
+
+  /* trail + lead line */
+  SIM.trail.push(dv.pos);
+  if(SIM.trail.length>900)SIM.trail.shift();
+  if(map){
+  LG.trail.clearLayers();
+  L.polyline(SIM.trail,{color:"var(--warn)",weight:3,opacity:.8,dashArray:"4 4"}).addTo(LG.trail);
+  LG.lead.clearLayers();
+  L.polyline([vv.pos,dv.pos],{color:"var(--ok)",weight:2,opacity:.75,dashArray:"2 5"}).addTo(LG.lead);
+  visitorM.setLatLng(vv.pos);
+  }
+
+  /* arrival */
+  if(!SIM.returning && SIM.vd>=total-0.5){
+    push({state:"COMPLETE",speed:0,safety:"SAFE"});
+    notify("MISSION COMPLETE",`Destination reached: ${P.dest.name}.`,"ok");
+    SIM.returning=true;
+    setTimeout(()=>{push({state:"RETURNING"});},600);
+  }
+  if(SIM.returning && SIM.dd<=0.5){
+    push({state:"LANDING",speed:0});
+    setTimeout(()=>{SIM.returning=false;simStop();},700);
+  }
+  if(state.page==="mission"||state.page==="sim"||state.page==="livemap"||state.page==="overview")
+    renderLive();
+}
+
+/* ═══════════ telemetry → UI ═══════════ */
+Telemetry.on(s=>{
+  if(map&&droneM){
+    droneM.setLatLng(s.pos);
+    const i=document.getElementById("dIco");
+    if(i)i.style.transform=`rotate(${s.heading}deg)`;
+  }
+  const rtk=document.getElementById("cRtk");
+  rtk.innerHTML=`<i class="dot ${s.rtk==="FIX"?"ok":s.rtk==="NO FIX"?"bad":"warn"}"></i><span>RTK ${s.rtk}</span>`;
+  const sys=document.getElementById("cSys");
+  const bad=s.safety==="EMERGENCY", warn=s.safety!=="SAFE";
+  sys.innerHTML=`<i class="dot ${bad?"bad":warn?"warn":"ok"}"></i><span>${
+    bad?"ATTENTION REQUIRED":warn?"SIMULATION ACTIVE":"SYSTEM OPERATIONAL"}</span>`;
+  const tp=document.getElementById("telePanel");
+  if(tp)tp.innerHTML=`<h3>TELEMETRY <span class="tag sim">SIM</span></h3><div class="tele">
+    <div><span>ALT</span><b>${s.altitude.toFixed(1)} m</b></div>
+    <div><span>SPEED</span><b>${s.speed.toFixed(2)} m/s</b></div>
+    <div><span>HEADING</span><b>${Math.round(s.heading)}°</b></div>
+    <div><span>BATTERY</span><b class="${s.battery<D.reserve?"bad":s.battery<40?"warn":"ok"}">${Math.round(s.battery)}%</b></div>
+    <div><span>RTK</span><b class="${s.rtk==="FIX"?"ok":"warn"}">${s.rtk}</b></div>
+    <div><span>SIGNAL</span><b>${s.signal}%</b></div>
+    <div><span>GPS</span><b>${s.satellites}</b></div>
+    <div><span>STATE</span><b class="acc">${s.state}</b></div></div>`;
+});
+
+/* ═══════════ pages ═══════════ */
+const TITLES={overview:"Overview",livemap:"Live Map",planner:"Route Planner",
+  mission:"Mission Control",fleet:"Fleet",sim:"Simulation",safety:"Safety",
+  dests:"Destinations",stats:"Statistics",about:"About",settings:"Settings"};
+
+function go(pg){
+  state.page=pg;
+  document.querySelectorAll(".nav button[data-pg]").forEach(b=>
+    b.setAttribute("aria-current",b.dataset.pg===pg?"page":"false"));
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
+  document.getElementById("pg-"+pg).classList.add("on");
+  document.getElementById("ptitle").textContent=TITLES[pg]||"";
+  if(pg==="livemap"){ document.getElementById("mapHost").appendChild(document.getElementById("map")); }
+  renderAll();
+  setTimeout(fixMap,60);
+}
+document.querySelectorAll(".nav button[data-pg]").forEach(b=>b.onclick=()=>go(b.dataset.pg));
+
+function routeSummaryHTML(){
+  const P=state.plan;
+  if(!P)return `<div class="empty"><b>NO ACTIVE MISSION</b>Select a destination to plan a route.</div>`;
+  const longest=Math.max(...P.legs.map(l=>l.m));
+  return `<div class="kv"><span>Destination</span><b>${P.dest.name}</b></div>
+  <div class="kv"><span>Launch pad</span><b>${PADNAME[state.pad]}</b></div>
+  <div class="kv"><span>Distance</span><b>${Math.round(P.total)} m</b></div>
+  <div class="kv"><span>Walking time</span><b>${fmtT(P.walkSec)}</b></div>
+  <div class="kv"><span>Nodes</span><b>${P.path.length}</b></div>
+  <div class="kv"><span>Legs</span><b class="${P.legs.length>1?"warn":"ok"}">${P.legs.length}</b></div>
+  <div class="kv"><span>Longest leg</span><b class="${longest>D.legLimit?"bad":"ok"}">${Math.round(longest)} m</b></div>
+  <div class="kv"><span>Est. battery</span><b>${P.battery}%</b></div>`;
+}
+function legsHTML(){
+  const P=state.plan; if(!P)return "";
+  return P.legs.map((l,i)=>{
+    const f=l.nodes[0],t=l.nodes[l.nodes.length-1];
+    return `<div class="leg ${SIM.run&&SIM.legIdx===i?"act":""}">
+      <div class="n">${i+1}</div><div class="f">
+      <b>Node ${f} → ${t}</b>
+      <span>${Math.round(l.m)} m · ${fmtT(l.m/D.walkSpeed)} · battery ${Math.round(l.m/D.walkSpeed/60*D.batteryPerMin)}%${
+        i<P.legs.length-1?" · battery swap at end":""}</span></div></div>`;
+  }).join("");
+}
+function destSelect(){
+  return `<select onchange="selectDest(this.value)" aria-label="Destination">
+    <option value="">Select a destination…</option>${
+    DESTS.filter(d=>!/Gate$/.test(d.name)).map(d=>
+    `<option value="${d.name}" ${state.dest===d.name?"selected":""}>${d.name}</option>`).join("")}</select>`;
+}
+function padSelect(){
+  return `<select onchange="state.pad=+this.value;plan();renderAll()" aria-label="Launch pad">${
+    D.pads.map(([id,nm])=>`<option value="${id}" ${state.pad===id?"selected":""}>${nm} — node ${id}</option>`).join("")}</select>`;
+}
+
+function renderOverview(){
+  const s=T.state,P=state.plan;
+  document.getElementById("pg-overview").innerHTML=`
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+    <h2>Overview</h2><span class="tag sim">SIMULATION</span></div>
+  <p class="lede">All values below are produced by the simulator and the surveyed campus graph.
+    No aircraft is connected.</p>
+  <div class="grid g4" style="margin-bottom:12px">
+    <div class="card metric"><b>${SIM.run?1:0} / ${D.pads.length}</b><span>ACTIVE DRONES</span></div>
+    <div class="card metric"><b>${SIM.run?1:0}</b><span>VISITORS BEING GUIDED</span></div>
+    <div class="card metric"><b style="font-size:19px">${P?PADNAME[state.pad].toUpperCase().replace(" PAD","")+" → "+P.dest.name:"—"}</b><span>ACTIVE MISSION</span></div>
+    <div class="card metric"><b>${P?Math.round(P.total)+" m":"—"}</b><span>ROUTE DISTANCE</span></div>
+  </div>
+  <div class="grid g4" style="margin-bottom:12px">
+    <div class="card metric"><b>${P?fmtT(P.walkSec):"—"}</b><span>EST. WALKING TIME</span></div>
+    <div class="card metric"><b class="${s.battery<D.reserve?"bad":"ok"}">${Math.round(s.battery)}%</b><span>BATTERY</span></div>
+    <div class="card metric"><b class="${s.rtk==="FIX"?"ok":"warn"}">${s.rtk}</b><span>RTK</span></div>
+    <div class="card metric"><b class="${s.safety==="SAFE"?"ok":s.safety==="EMERGENCY"?"bad":"warn"}">${s.safety.replace(/_/g," ")}</b><span>SYSTEM</span></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>PLAN A MISSION</h3>
+      ${padSelect()}<div style="height:8px"></div>${destSelect()}
+      <div style="height:10px"></div>
+      <div class="row"><button class="btn pri" onclick="go('planner')">PLAN ROUTE</button>
+      <button class="btn" onclick="go('livemap')">OPEN MAP</button></div></div>
+    <div class="card"><h3>ROUTE SUMMARY</h3>${routeSummaryHTML()}</div>
+  </div>`;
+}
+
+function renderPlanner(){
+  const P=state.plan;
+  document.getElementById("pg-planner").innerHTML=`
+  <h2>Route Planner</h2>
+  <p class="lede">Dijkstra over ${D.nodes.length} surveyed nodes. Legs are split greedily at the
+    ${D.legLimit} m limit, sized for a ${D.walkSpeed} m/s walking pace.</p>
+  <div class="grid g3">
+    <div class="card"><h3>WHERE DO YOU WANT TO GO?</h3>
+      <input id="pQ" placeholder="Search destinations" value="${state.search}"
+             oninput="state.search=this.value;renderPlanner()" aria-label="Search destinations">
+      <div style="height:9px"></div>
+      <div class="chips">${["All",...CATS].map(c=>
+        `<button class="fchip" aria-pressed="${state.filter===c}"
+          onclick="state.filter='${c}';renderPlanner()">${c}</button>`).join("")}</div>
+      <div style="max-height:330px;overflow-y:auto">${destListHTML()}</div></div>
+    <div class="card"><h3>DESTINATION</h3>${destCardHTML()}</div>
+    <div class="card"><h3>ROUTE SUMMARY</h3>${routeSummaryHTML()}
+      ${P?`<div style="height:12px"></div><h3>LEGS</h3>${legsHTML()}
+      <button class="btn" onclick="exportMission()">EXPORT MISSION FILE</button>`:""}</div>
+  </div>`;
+  const q=document.getElementById("pQ"); if(q&&document.activeElement!==q) q.value=state.search;
+}
+function destListHTML(){
+  const s=state.search.trim().toLowerCase();
+  const rows=DESTS.filter(d=>!/Gate$/.test(d.name))
+    .filter(d=>state.filter==="All"||d.cat===state.filter)
+    .filter(d=>d.name.toLowerCase().includes(s)||d.cat.toLowerCase().includes(s))
+    .map(d=>({...d,dist:nearestPad(d.ents)[0],pad:nearestPad(d.ents)[1]}))
+    .sort((a,b)=>a.dist-b.dist);
+  if(!rows.length)return `<div class="empty"><b>NO MATCHES</b>Try a shorter search or another category.</div>`;
+  return rows.map(d=>`<button class="hit" onclick="selectDest('${d.name.replace(/'/g,"\\'")}')">
+    <div class="f"><b>${d.name}</b><em>${d.cat} · ${PADNAME[d.pad]}</em></div>
+    <div class="d">${Math.round(d.dist)} m</div>
+    <span class="fav ${state.favs.includes(d.name)?"on":""}"
+      onclick="event.stopPropagation();toggleFav('${d.name.replace(/'/g,"\\'")}')"
+      role="button" aria-label="Favourite">★</span></button>`).join("");
+}
+function toggleFav(n){
+  state.favs=state.favs.includes(n)?state.favs.filter(x=>x!==n):[...state.favs,n];
+  store.set("navi.favs",state.favs); renderAll();
+}
+function destCardHTML(){
+  const P=state.plan;
+  if(!P)return `<div class="empty"><b>SELECT A DESTINATION</b>Choose from the list to see distance, legs and battery.</div>`;
+  const longest=Math.max(...P.legs.map(l=>l.m));
+  return `<div style="font-size:19px;font-weight:700;margin-bottom:2px">${P.dest.name}</div>
+    <div class="tag" style="margin-bottom:12px">${P.dest.cat.toUpperCase()}</div>
+    <div class="kv"><span>Entrance node</span><b>${P.node}</b></div>
+    <div class="kv"><span>Nearest launch pad</span><b>${PADNAME[state.pad]}</b></div>
+    <div class="kv"><span>Walking distance</span><b>${Math.round(P.total)} m</b></div>
+    <div class="kv"><span>Est. walking time</span><b>${fmtT(P.walkSec)}</b></div>
+    <div class="kv"><span>Route legs</span><b>${P.legs.length}</b></div>
+    <div class="kv"><span>Maximum leg</span><b>${Math.round(longest)} m</b></div>
+    <div class="kv"><span>Est. battery</span><b>${P.battery}%</b></div>
+    <div style="height:12px"></div>
+    <button class="btn pri" onclick="go('livemap')">VIEW ON MAP</button>
+    <div style="height:8px"></div>
+    <button class="btn" onclick="go('sim');simStart()">START SIMULATED MISSION</button>`;
+}
+
+function renderMission(){
+  const s=T.state,P=state.plan;
+  document.getElementById("pg-mission").innerHTML=`
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+    <h2>Mission Control</h2><span class="tag sim">SIMULATION</span></div>
+  ${!P?`<div class="card"><div class="empty"><b>NO ACTIVE MISSION</b>Select a destination to plan a route.</div></div>`:`
+  <div class="grid g3">
+    <div class="card"><h3>MISSION</h3>
+      <div class="kv"><span>Route</span><b>${PADNAME[state.pad]} → ${P.dest.name}</b></div>
+      <div class="kv"><span>Status</span><b class="acc">${s.state.replace(/_/g," ")}</b></div>
+      <div class="kv"><span>Current leg</span><b>LEG ${String(s.leg||1).padStart(2,"0")} / ${String(P.legs.length).padStart(2,"0")}</b></div>
+      <div class="kv"><span>Current waypoint</span><b>${s.wp}</b></div>
+      <div class="kv"><span>Progress</span><b>${Math.round((s.progress||0)*100)}%</b></div>
+      <div class="bar"><i style="width:${Math.round((s.progress||0)*100)}%"></i></div>
+      <div style="height:8px"></div>
+      <div class="kv"><span>ETA</span><b>${fmtT(s.eta||0)}</b></div>
+      <div class="kv"><span>Visitor distance</span><b>${(s.leadGap||0).toFixed(1)} m</b></div>
+      <div class="kv"><span>Drone speed</span><b>${(s.speed||0).toFixed(2)} m/s</b></div>
+    </div>
+    <div class="card"><h3>HUMAN PACING</h3>${pacingHTML()}</div>
+    <div class="card"><h3>CONTROLS</h3>
+      <div class="row"><button class="btn pri" onclick="${SIM.run?"simPause()":"simStart()"}">${SIM.run?"PAUSE":"START"}</button>
+      <button class="btn" onclick="simRestart()">RESTART</button></div>
+      <button class="btn" onclick="returnToLaunch()">RETURN TO LAUNCH</button>
+      <button class="btn danger" onclick="confirmAction('Abort mission?','The simulated drone will stop and return to the launch pad. Mission progress will be lost.','ABORT',simStop,true)">ABORT MISSION</button>
+      <button class="btn danger" onclick="confirmAction('Emergency hold?','The simulated drone will hold position immediately.','EMERGENCY HOLD',simPause,true)">EMERGENCY HOLD</button>
+      <div style="height:12px"></div><h3>LEGS</h3>${legsHTML()}
+    </div>
+  </div>`}`;
+}
+function pacingHTML(){
+  const s=T.state;
+  if(!SIM.run&&!SIM.trail.length)
+    return `<div class="empty"><b>NOT PACING</b>Start the simulation to see lead-distance control.</div>`;
+  const gap=s.leadGap||0, pct=Math.max(6,Math.min(94,(gap/(D.leadTarget*2))*100));
+  const st = s.state==="HOLDING"?"HOLDING":gap<D.leadTarget-2?"CLOSING DISTANCE":
+             gap>D.leadTarget+2?"OPENING DISTANCE":"ADJUSTING";
+  return `<div class="kv"><span>Visitor</span><b>${(s.visitorSpeed||0).toFixed(2)} m/s</b></div>
+    <div class="kv"><span>Drone</span><b>${(s.speed||0).toFixed(2)} m/s</b></div>
+    <div class="kv"><span>Lead distance</span><b class="acc">${gap.toFixed(1)} m</b></div>
+    <div class="kv"><span>Target</span><b>${D.leadTarget} m</b></div>
+    <div class="kv"><span>Status</span><b class="${st==="HOLDING"?"warn":"ok"}">${st}</b></div>
+    <div class="pace"><div class="track">
+      <span class="lbl" style="left:6%">VISITOR</span>
+      <span class="lbl" style="left:${pct}%">DRONE</span>
+      <i class="v" style="left:6%"></i><i class="d" style="left:${pct}%"></i>
+    </div><div class="gap">${gap.toFixed(1)} m</div></div>`;
+}
+
+function renderFleet(){
+  const s=T.state;
+  const cards=D.pads.map(([id,nm],i)=>{
+    const live=i===0;
+    return `<button class="card" style="text-align:left;width:100%" onclick="${live?"showDrone()":"void 0"}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <b class="mono" style="font-size:14px">NAVI-0${i+1}</b>
+        <span class="tag" style="margin-left:auto;color:${live?"var(--ok)":"var(--faint)"};
+          border-color:${live?"var(--ok)":"var(--line)"}">${live?(SIM.run?"● ACTIVE":"● STANDBY"):"● NOT DEPLOYED"}</span></div>
+      ${live?`<div class="kv"><span>Battery</span><b class="${s.battery<D.reserve?"bad":"ok"}">${Math.round(s.battery)}%</b></div>
+      <div class="kv"><span>RTK</span><b>${s.rtk}</b></div>
+      <div class="kv"><span>Signal</span><b>${s.signal?s.signal+"%":"—"}</b></div>
+      <div class="kv"><span>Altitude</span><b>${s.altitude.toFixed(1)} m</b></div>
+      <div class="kv"><span>Speed</span><b>${s.speed.toFixed(2)} m/s</b></div>
+      <div class="kv"><span>Mission</span><b>${state.plan?PADNAME[state.pad].replace(" Pad","")+" → "+state.plan.dest.name:"—"}</b></div>
+      <div class="kv"><span>Session</span><b>${fmtT(s.session||0)}</b></div>`
+      :`<div class="empty" style="padding:14px 6px"><b>NO AIRCRAFT</b>Pad ${nm} has no assigned drone in this build.</div>`}
+    </button>`;
+  }).join("");
+  document.getElementById("pg-fleet").innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <h2>Fleet</h2><span class="tag sim">SIMULATION</span></div>
+    <p class="lede">One simulated aircraft. The remaining pads are launch sites, not aircraft.</p>
+    <div class="grid g3">${cards}</div>`;
+}
+function showDrone(){
+  const s=T.state;
+  document.getElementById("sheet").innerHTML=`<h2 class="mono">${s.droneId}</h2>
+  <p>Simulated aircraft detail. No hardware is connected.</p>
+  <h3>IDENTITY</h3>
+  <div class="kv"><span>Model</span><b>${s.model}</b></div>
+  <div class="kv"><span>Flight controller</span><b>${s.fc}</b></div>
+  <div class="kv"><span>Companion computer</span><b>${s.companion}</b></div>
+  <h3 style="margin-top:12px">POSITION</h3>
+  <div class="kv"><span>Latitude</span><b>${s.pos[0].toFixed(6)}</b></div>
+  <div class="kv"><span>Longitude</span><b>${s.pos[1].toFixed(6)}</b></div>
+  <div class="kv"><span>Altitude</span><b>${s.altitude.toFixed(1)} m</b></div>
+  <h3 style="margin-top:12px">NAVIGATION</h3>
+  <div class="kv"><span>Speed</span><b>${s.speed.toFixed(2)} m/s</b></div>
+  <div class="kv"><span>Heading</span><b>${Math.round(s.heading)}°</b></div>
+  <div class="kv"><span>Distance to visitor</span><b>${(s.leadGap||0).toFixed(1)} m</b></div>
+  <h3 style="margin-top:12px">POSITIONING</h3>
+  <div class="kv"><span>RTK</span><b>${s.rtk}</b></div>
+  <div class="kv"><span>Satellites</span><b>${s.satellites}</b></div>
+  <div class="kv"><span>Accuracy</span><b>${s.gpsAccuracy.toFixed(2)} m</b></div>
+  <h3 style="margin-top:12px">COMMUNICATION</h3>
+  <div class="kv"><span>Link</span><b>${s.link}</b></div>
+  <div class="kv"><span>Signal</span><b>${s.signal}%</b></div>
+  <h3 style="margin-top:12px">POWER</h3>
+  <div class="kv"><span>Battery</span><b>${Math.round(s.battery)}%</b></div>
+  <div class="kv"><span>Voltage</span><b>${s.voltage.toFixed(2)} V</b></div>
+  <h3 style="margin-top:12px">VISION SYSTEM</h3>
+  <div class="empty"><b>NO CAMERA CONNECTED</b>Vision telemetry unavailable.</div>
+  <div style="height:12px"></div><button class="btn" onclick="closeModal()">Close</button>`;
+  document.getElementById("modal").classList.add("on");
+}
+
+function renderSim(){
+  const F=SIM.faults;
+  const fault=(k,l)=>`<button class="btn sm" aria-pressed="${F[k]}"
+    style="${F[k]?"border-color:var(--bad);color:var(--bad)":""}" onclick="toggleFault('${k}')">${l}</button>`;
+  document.getElementById("pg-sim").innerHTML=`
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+    <h2>Simulation</h2><span class="tag sim">SIMULATION</span></div>
+  <p class="lede">The visitor walks the route at ${D.walkSpeed} m/s; the drone holds a
+    ${D.leadTarget} m lead and adapts. Fault injection affects the map, telemetry and safety state.</p>
+  <div class="grid g3">
+    <div class="card"><h3>PLAYBACK</h3>
+      <div class="row"><button class="btn pri" onclick="${SIM.run?"simPause()":"simStart()"}">${SIM.run?"PAUSE":"PLAY"}</button>
+        <button class="btn" onclick="simRestart()">RESTART</button></div>
+      <div class="row"><button class="btn" onclick="skipWaypoint()">SKIP WAYPOINT</button>
+        <button class="btn" onclick="returnToLaunch()">RTL</button></div>
+      <button class="btn danger" onclick="simStop()">STOP</button>
+      <div style="height:10px"></div><h3>SPEED</h3>
+      <div class="chips">${[1,2,5,10,25].map(r=>
+        `<button class="fchip" aria-pressed="${SIM.rate===r}" onclick="SIM.rate=${r};renderSim()">${r}×</button>`).join("")}</div>
+    </div>
+    <div class="card"><h3>FAULT INJECTION</h3>
+      <p style="font-size:11.5px;color:var(--dim);margin-bottom:10px;line-height:1.5">
+        Each toggle drives the safety state machine and the documented failsafe response.</p>
+      ${fault("stop","Visitor stopped")}${fault("delay","Visitor delayed")}
+      ${fault("rtk","RTK loss")}${fault("link","Telemetry loss")}
+      ${fault("batt","Low battery")}${fault("fence","Geofence breach")}
+    </div>
+    <div class="card"><h3>DRONE STATE MACHINE</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">${STATES.map(s=>
+        `<span class="tag" style="${T.state.state===s?"color:var(--acc);border-color:var(--acc)":""}">${s}</span>`).join("")}</div>
+      <div style="height:14px"></div><h3>MISSION PROGRESS</h3>
+      <div class="bar"><i style="width:${Math.round((T.state.progress||0)*100)}%"></i></div>
+      <div style="height:10px"></div>${routeSummaryHTML()}</div>
+  </div>`;
+}
+
+function renderSafety(){
+  const s=T.state;
+  const chk=(l,ok,note)=>`<tr><td><b>${l}</b><br><span style="font-size:11px;color:var(--dim)">${note}</span></td>
+    <td style="text-align:right"><span class="tag" style="color:${ok?"var(--ok)":"var(--bad)"};
+      border-color:${ok?"var(--ok)":"var(--bad)"}">${ok?"SAFE":"ATTENTION"}</span></td></tr>`;
+  const P=state.plan;
+  document.getElementById("pg-safety").innerHTML=`
+  <h2>Safety</h2>
+  <p class="lede">Live checks from the simulator, plus the documented failsafe table.
+    Geofence uses ray-casting point-in-polygon with point-to-segment distance; a breach is
+    outside the boundary by more than ${D.fenceBuffer} m.</p>
+  <div class="grid g2">
+    <div class="card"><h3>LIVE CHECKS</h3><table>
+      ${chk("RTK FIX",s.rtk==="FIX"||!SIM.run,"Centimetre positioning available")}
+      ${chk("TELEMETRY LINK",!SIM.faults.link,"Ground station link to NAVI-01")}
+      ${chk("BATTERY",s.battery>D.reserve,`Reserve threshold ${D.reserve}%`)}
+      ${chk("GEOFENCE",!SIM.faults.fence&&!breached(s.pos),`${D.fenceBuffer} m buffer outside the campus boundary`)}
+      ${chk("VISITOR POSITION",!SIM.faults.stop,"Position fresher than 30 s")}
+      ${chk("ALTITUDE",true,`Flat ${D.defaultAlt} m placeholder pending obstruction survey`)}
+      </table>
+      <div style="height:10px"></div>
+      <div class="kv"><span>Safety state</span><b class="${s.safety==="SAFE"?"ok":s.safety==="EMERGENCY"?"bad":"warn"}">${s.safety.replace(/_/g," ")}</b></div>
+      <div class="kv"><span>Boundary risk points</span><b class="warn">${riskCount} nodes within 25 m</b></div>
+      ${P&&P.breach.length?`<div class="kv"><span>Route breach</span><b class="bad">node ${P.breach.join(", ")}</b></div>`:""}
+    </div>
+    <div class="card"><h3>DOCUMENTED FAILSAFE BEHAVIOUR</h3><table>
+      <tr><th>Condition</th><th>Action</th></tr>
+      <tr><td>RTK fix lost</td><td>Hold → Return to launch</td></tr>
+      <tr><td>Telemetry lost</td><td>Return to launch</td></tr>
+      <tr><td>Visitor position stale &gt; 30 s</td><td>Hold → Return</td></tr>
+      <tr><td>Battery below reserve</td><td>Immediate return</td></tr>
+      <tr><td>Geofence breach</td><td>Stop and hold</td></tr></table>
+      <div style="height:12px"></div><h3>SAFETY STATE MACHINE</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">${
+        ["SAFE","WARNING","HOLD","RETURN_TO_LAUNCH","EMERGENCY"].map(x=>
+        `<span class="tag" style="${s.safety===x?"color:var(--acc);border-color:var(--acc)":""}">${x.replace(/_/g," ")}</span>`).join("")}</div>
+    </div>
+  </div>`;
+}
+
+function renderDests(){
+  const s=state.search.trim().toLowerCase();
+  const rows=DESTS.map(d=>{const [dist,pad]=nearestPad(d.ents);return{...d,dist,pad};})
+    .filter(d=>state.filter==="All"||d.cat===state.filter)
+    .filter(d=>d.name.toLowerCase().includes(s))
+    .sort((a,b)=>a.dist-b.dist);
+  document.getElementById("pg-dests").innerHTML=`
+  <h2>Destinations</h2>
+  <p class="lede">${DESTS.length} destinations from the campus dataset, sorted by distance from
+    their nearest launch pad. Categories are derived from the destination names.</p>
+  <div class="card">
+    <input placeholder="Search destinations" value="${state.search}"
+           oninput="state.search=this.value;renderDests()" aria-label="Search destinations">
+    <div style="height:9px"></div>
+    <div class="chips">${["All",...CATS].map(c=>
+      `<button class="fchip" aria-pressed="${state.filter===c}"
+        onclick="state.filter='${c}';renderDests()">${c}</button>`).join("")}</div>
+    ${rows.length?`<table><tr><th>Name</th><th>Category</th><th>Entrance</th><th>Nearest pad</th>
+      <th style="text-align:right">Distance</th><th style="text-align:right">Walk</th><th></th></tr>
+      ${rows.map(d=>`<tr>
+        <td><b>${d.name}</b></td><td>${d.cat}</td>
+        <td class="mono">${d.ents.join(", ")}</td><td>${PADNAME[d.pad]}</td>
+        <td class="mono" style="text-align:right">${Math.round(d.dist)} m</td>
+        <td class="mono" style="text-align:right">${fmtT(d.dist/D.walkSpeed)}</td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="fav ${state.favs.includes(d.name)?"on":""}" style="font-size:14px"
+            onclick="toggleFav('${d.name.replace(/'/g,"\\'")}')" aria-label="Favourite">★</button>
+          <button class="btn sm" style="width:auto;display:inline-block"
+            onclick="selectDest('${d.name.replace(/'/g,"\\'")}');go('planner')">Plan</button></td></tr>`).join("")}</table>`
+    :`<div class="empty"><b>NO MATCHES</b>Try a shorter search or a different category.</div>`}
+  </div>`;
+}
+
+function renderStats(){
+  const demo=[62,48,71,55,83,66,74];
+  const bars=(vals,c)=>`<svg viewBox="0 0 210 62" style="width:100%;height:62px" role="img">
+    ${vals.map((v,i)=>`<rect x="${i*30+4}" y="${62-v*0.6}" width="20" height="${v*0.6}"
+      rx="2" fill="${c}" opacity="${.45+i*0.08}"/>`).join("")}</svg>`;
+  document.getElementById("pg-stats").innerHTML=`
+  <h2>Statistics</h2>
+  <p class="lede">Campus figures are computed from the surveyed dataset. Charts below use
+    demonstration data and are labelled as such — no mission history exists yet.</p>
+  <div class="grid g4" style="margin-bottom:12px">
+    <div class="card metric"><b>${D.stats.areaHa} ha</b><span>CAMPUS AREA</span></div>
+    <div class="card metric"><b>${D.stats.networkKm} km</b><span>PATH NETWORK</span></div>
+    <div class="card metric"><b>${DESTS.length}</b><span>DESTINATIONS</span></div>
+    <div class="card metric"><b>${D.pads.length}</b><span>LAUNCH PADS</span></div>
+  </div>
+  <div class="grid g4" style="margin-bottom:12px">
+    <div class="card metric"><b>${D.stats.segments}</b><span>SURVEYED SEGMENTS</span></div>
+    <div class="card metric"><b>${D.legLimit} m</b><span>MAXIMUM DESIGN LEG</span></div>
+    <div class="card metric"><b>${D.walkSpeed} m/s</b><span>DESIGN WALKING SPEED</span></div>
+    <div class="card metric"><b>${D.stats.perimeterM} m</b><span>BOUNDARY PERIMETER</span></div>
+  </div>
+  <div class="grid g3">
+    ${[["Missions per day","var(--acc)"],["Route distance","var(--ok)"],["Battery usage","var(--warn)"],
+       ["Average walking speed","var(--info)"],["Drone utilisation","var(--acc)"],["Safety events","var(--bad)"]]
+      .map(([t,c])=>`<div class="card"><h3>${t.toUpperCase()} <span class="tag demo">DEMO DATA</span></h3>
+        ${bars(demo.map(v=>v*(0.7+Math.random()*0.6)),c)}</div>`).join("")}
+  </div>`;
+}
+
+function renderAbout(){
+  document.getElementById("pg-about").innerHTML=`
+  <h2>About NAVI</h2>
+  <p class="lede">Interdisciplinary project · Vellore Institute of Technology</p>
+  <div class="grid g2">
+    <div class="card"><h3>WHAT IS NAVI?</h3>
+      <p style="font-size:13px;line-height:1.6;color:var(--dim)">An autonomous micro aerial
+      vehicle that guides visitors across campus.</p>
+      <h3 style="margin-top:14px">PROBLEM</h3>
+      <p style="font-size:13px;line-height:1.6;color:var(--dim)">Visitors struggle with
+      self-localisation on large campuses.</p>
+      <h3 style="margin-top:14px">SOLUTION</h3>
+      <p style="font-size:13px;line-height:1.6;color:var(--dim)">A visible aerial guide
+      physically leads them.</p>
+      <h3 style="margin-top:14px">TECHNICAL CONTRIBUTION</h3>
+      <ol style="font-size:13px;line-height:1.8;color:var(--dim);padding-left:18px">
+        <li>Human-paced drone guidance</li><li>Per-segment altitude model</li>
+        <li>Zero-install visitor interface</li></ol></div>
+    <div class="card"><h3>SCOPE</h3>
+      <div class="grid g2" style="gap:14px">
+        <div><div class="tag" style="color:var(--ok);border-color:var(--ok);margin-bottom:8px">IN SCOPE</div>
+        <ul style="font-size:12.5px;line-height:1.7;color:var(--dim);padding-left:16px">
+          <li>Outdoor campus flight</li><li>Surveyed pathways</li>
+          <li>Maximum ${D.legLimit} m guided legs</li><li>Predefined destinations</li>
+          <li>One visitor or small group</li><li>Daytime fair-weather operation</li>
+          <li>Staged longer routes</li><li>Autonomous operation under institutional clearance</li></ul></div>
+        <div><div class="tag" style="margin-bottom:8px">OUT OF SCOPE</div>
+        <ul style="font-size:12.5px;line-height:1.7;color:var(--faint);padding-left:16px">
+          <li>Indoor navigation</li><li>BVLOS</li><li>Multiple simultaneous visitors</li>
+          <li>Night operation</li><li>Adverse weather</li><li>Autonomous charging</li>
+          <li>Luggage transportation</li><li>Live obstacle detection</li>
+          <li>Dynamic in-flight rerouting</li></ul></div></div>
+      <div style="height:12px"></div>
+      <div class="empty" style="text-align:left;padding:12px">
+        <b>DATA PROVENANCE</b>
+        Coordinates are model-derived, not RTK-surveyed. Altitude is a flat ${D.defaultAlt} m
+        placeholder pending the overhead-obstruction survey. No camera stream and no aircraft
+        are connected. Campus boundary © OpenStreetMap contributors, ODbL 1.0.</div>
+    </div>
+  </div>`;
+}
+
+function renderSettings(){
+  const th=document.documentElement.dataset.theme;
+  document.getElementById("pg-settings").innerHTML=`
+  <h2>Settings</h2>
+  <p class="lede">Preferences are stored in this browser only.</p>
+  <div class="grid g2">
+    <div class="card"><h3>APPEARANCE</h3>
+      <div class="chips">
+        <button class="fchip" aria-pressed="${th==="dark"}" onclick="applyTheme('dark');renderAll()">Dark — operations</button>
+        <button class="fchip" aria-pressed="${th==="light"}" onclick="applyTheme('light');renderAll()">Light — planning</button></div>
+      <div style="height:12px"></div><h3>DEFAULT LAUNCH PAD</h3>${padSelect()}
+      <div style="height:12px"></div><h3>SIMULATION SPEED</h3>
+      <select onchange="SIM.rate=+this.value">${[1,2,5,10,25].map(r=>
+        `<option value="${r}" ${SIM.rate===r?"selected":""}>${r}×</option>`).join("")}</select>
+    </div>
+    <div class="card"><h3>TELEMETRY SOURCE</h3>
+      <div class="kv"><span>Active provider</span><b class="warn">SimulatedTelemetry</b></div>
+      <div class="kv"><span>MAVLink</span><b>Not connected</b></div>
+      <div class="kv"><span>WebSocket</span><b>Not connected</b></div>
+      <div class="kv"><span>MQTT</span><b>Not connected</b></div>
+      <p style="font-size:12px;color:var(--dim);line-height:1.6;margin-top:10px">
+        Replace the object passed to <code class="mono">Telemetry.use()</code> with a provider
+        that emits the same state shape. No interface code needs to change.</p>
+      <div style="height:12px"></div><h3>DATA</h3>
+      <button class="btn" onclick="store.set('navi.favs',[]);state.favs=[];renderAll();notify('FAVOURITES CLEARED','Saved destinations removed.','ok')">Clear favourites</button>
+      <button class="btn" onclick="exportMission()">Export current mission file</button>
+    </div>
+  </div>`;
+}
+
+function renderLive(){
+  if(state.page==="mission")renderMission();
+  else if(state.page==="sim")renderSim();
+  else if(state.page==="overview")renderOverview();
+  else if(state.page==="livemap"){
+    const rp=document.getElementById("routePanel");
+    if(rp)rp.innerHTML=`<h3>ROUTE</h3>${routeSummaryHTML()}
+      ${state.plan?`<div style="height:8px"></div>
+      <button class="btn sm pri" onclick="${SIM.run?"simPause()":"simStart()"}">${SIM.run?"PAUSE":"START MISSION"}</button>`:""}`;
+  }
+}
+function renderAll(){
+  renderOverview();
+  if(state.page==="planner")renderPlanner();
+  if(state.page==="mission")renderMission();
+  if(state.page==="fleet")renderFleet();
+  if(state.page==="sim")renderSim();
+  if(state.page==="safety")renderSafety();
+  if(state.page==="dests")renderDests();
+  if(state.page==="stats")renderStats();
+  if(state.page==="about")renderAbout();
+  if(state.page==="settings")renderSettings();
+  renderLive();
+  if(vState.open)renderVisitor();
+}
+
+/* ═══════════ export ═══════════ */
+function exportMission(){
+  const P=state.plan;
+  if(!P){notify("EXPORT FAILED","No route planned. Select a destination first.","bad");return;}
+  const out={
+    label:"SIMULATION EXPORT — not uploaded to an aircraft",
+    generated:new Date().toISOString(),
+    destination:P.dest.name, category:P.dest.cat,
+    launchPad:{node:state.pad,name:PADNAME[state.pad]},
+    totalMetres:Math.round(P.total), walkSpeedMps:D.walkSpeed,
+    legLimitMetres:D.legLimit, estimatedBatteryPct:P.battery,
+    altitudeNote:`Flat ${D.defaultAlt} m placeholder pending overhead-obstruction survey`,
+    coordinateNote:"Model-derived coordinates, not RTK-surveyed",
+    legs:P.legs.map((l,i)=>({leg:i+1,metres:Math.round(l.m),
+      waypoints:l.nodes.map((n,k)=>({wp:"WP-"+String(k).padStart(3,"0"),node:n,
+        lat:N[n][0],lon:N[n][1],alt:D.defaultAlt}))})),
+    attribution:"Campus boundary © OpenStreetMap contributors, ODbL 1.0"};
+  try{
+    const b=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(b);
+    a.download="navi_mission_"+P.dest.name.replace(/\W+/g,"_")+".json";
+    a.click(); URL.revokeObjectURL(a.href);
+    notify("MISSION FILE EXPORTED",`${P.legs.length} leg(s), ${P.path.length} waypoints.`,"ok");
+  }catch(e){ notify("EXPORT FAILED","The browser blocked the download.","bad"); }
+}
+
+/* ═══════════ visitor mode ═══════════ */
+const vState={open:false,step:1,dest:null,geo:"unknown",watch:null,simLoc:false};
+function enterVisitor(){
+  vState.open=true;vState.step=1;
+  initMap();
+  document.getElementById("landing").classList.add("hide");
+  document.getElementById("app").classList.remove("on");
+  document.getElementById("visitor").classList.add("on");
+  renderVisitor();
+}
+function exitVisitor(){
+  vState.open=false;
+  if(vState.watch!=null){try{navigator.geolocation.clearWatch(vState.watch);}catch{}vState.watch=null;}
+  document.getElementById("visitor").classList.remove("on");
+  document.getElementById("app").classList.add("on");
+  setTimeout(fixMap,80);
+}
+function vSteps(){
+  const labels=["Select destination","Allow location access","Location sharing active","Follow NAVI"];
+  return `<div class="vstep">${labels.map((l,i)=>{
+    const n=i+1;
+    return `<i class="${vState.step>n?"done":vState.step===n?"on":""}">${vState.step>n?"✓":n}</i>
+      <span style="${vState.step===n?"color:var(--text);font-weight:600":""}">${l}</span>
+      ${i<3?'<span style="color:var(--faint)">›</span>':''}`;}).join("")}</div>`;
+}
+function renderVisitor(){
+  const b=document.getElementById("vbody");
+  if(vState.step===1){
+    b.innerHTML=`${vSteps()}<h1>Where would you like to go?</h1>
+      <input id="vq" placeholder="Search for a building" aria-label="Search destinations"
+        oninput="state.search=this.value;renderVisitor()" value="${state.search}">
+      <div style="height:12px"></div>
+      ${state.recent.length?`<h3>RECENT</h3>${state.recent.slice(0,3).map(n=>
+        `<button class="hit" onclick="vPick('${n.replace(/'/g,"\\'")}')"><div class="f"><b>${n}</b></div></button>`).join("")}
+        <div style="height:12px"></div>`:""}
+      <h3>ALL DESTINATIONS</h3>
+      <div>${DESTS.filter(d=>!/Gate$/.test(d.name))
+        .filter(d=>d.name.toLowerCase().includes(state.search.trim().toLowerCase()))
+        .map(d=>({...d,dist:nearestPad(d.ents)[0]})).sort((a,b)=>a.dist-b.dist)
+        .map(d=>`<button class="hit" onclick="vPick('${d.name.replace(/'/g,"\\'")}')">
+          <div class="f"><b>${d.name}</b><em>${d.cat}</em></div>
+          <div class="d">${Math.round(d.dist)} m</div></button>`).join("")||
+          `<div class="empty"><b>NO MATCHES</b>Try a shorter search.</div>`}</div>`;
+    const q=document.getElementById("vq"); if(q&&document.activeElement!==q)q.value=state.search;
+  }
+  else if(vState.step===2){
+    b.innerHTML=`${vSteps()}<h1>Allow location access</h1>
+      <div class="vcard"><p style="font-size:13.5px;line-height:1.65;color:var(--dim)">
+        NAVI needs your position to match the drone's pace to your walking speed.
+        Your browser will ask for permission. Nothing is installed.</p></div>
+      <button class="btn pri" onclick="vAskLocation()">ALLOW LOCATION</button>
+      <div style="height:8px"></div>
+      <button class="btn" onclick="vState.simLoc=true;vState.step=3;renderVisitor()">
+        USE SIMULATED LOCATION</button>
+      ${vState.geo==="denied"?`<div style="height:10px"></div>
+        <div class="empty"><b>LOCATION UNAVAILABLE</b>
+        Permission was refused or the browser blocked it. You can continue with a clearly
+        labelled simulated location instead.</div>`:""}`;
+  }
+  else if(vState.step===3){
+    b.innerHTML=`${vSteps()}<h1>Location sharing active</h1>
+      <div class="vcard">
+        <div class="kv"><span>Source</span><b>${vState.simLoc?"SIMULATED LOCATION":"Device GPS"}</b></div>
+        <div class="kv"><span>Destination</span><b>${vState.dest}</b></div>
+        <div class="kv"><span>Distance</span><b>${state.plan?Math.round(state.plan.total)+" m":"—"}</b></div>
+        <div class="kv"><span>Walking pace</span><b>${D.walkSpeed} m/s</b></div>
+      </div>
+      ${vState.simLoc?`<div class="tag sim" style="margin-bottom:12px">SIMULATED LOCATION</div>`:""}
+      <div class="vcard"><p style="font-size:14px;line-height:1.7">
+        Your guide is ready.<br><br>Please follow the drone.<br><br>
+        Keep approximately ${D.leadTarget} m behind the drone.</p></div>
+      <button class="btn pri" onclick="vState.step=4;go('sim');simStart();renderVisitor()">FOLLOW NAVI</button>`;
+  }
+  else {
+    const s=T.state,P=state.plan;
+    const done=s.state==="COMPLETE"||s.state==="RETURNING"||s.state==="LANDING";
+    b.innerHTML= done
+      ? `<h1>Destination reached</h1>
+         <div class="vcard"><p style="font-size:15px;line-height:1.8">You have arrived at<br>
+           <b style="font-size:21px">${P?P.dest.name:""}</b><br><br>
+           NAVI is returning to launch.</p></div>
+         <div class="tag" style="color:var(--ok);border-color:var(--ok)">MISSION COMPLETE</div>
+         <div style="height:14px"></div>
+         <button class="btn pri" onclick="simStop();vState.step=1;renderVisitor()">GUIDE ME SOMEWHERE ELSE</button>`
+      : `<h1>Following</h1>
+         <div class="vcard">
+           <div style="font-size:11px;color:var(--dim);letter-spacing:.06em;margin-bottom:4px">DESTINATION</div>
+           <div style="font-size:20px;font-weight:700;margin-bottom:14px">${P?P.dest.name:"—"}</div>
+           <div class="grid g2">
+             <div><div class="vbig">${P?Math.max(0,Math.round(P.total*(1-(s.progress||0)))):0}<span style="font-size:15px"> m</span></div>
+               <span style="font-size:11px;color:var(--dim)">REMAINING</span></div>
+             <div><div class="vbig" style="font-size:32px">${fmtT(s.eta||0)}</div>
+               <span style="font-size:11px;color:var(--dim)">ETA</span></div></div>
+           <div class="bar" style="margin-top:14px"><i style="width:${Math.round((s.progress||0)*100)}%"></i></div>
+         </div>
+         <div class="vcard">
+           <div class="kv"><span>Drone</span><b>${s.droneId}</b></div>
+           <div class="kv"><span>Status</span><b class="ok">● GUIDING</b></div>
+           <div class="kv"><span>Stay about</span><b>${D.leadTarget} m behind</b></div>
+         </div>
+         <button class="btn danger" onclick="confirmAction('Stop guidance?','The drone will return to its launch pad.','STOP',()=>{simStop();vState.step=1;renderVisitor();},true)">STOP GUIDANCE</button>`;
+  }
+}
+function vPick(n){
+  vState.dest=n; selectDest(n); vState.step=2; renderVisitor();
+}
+function vAskLocation(){
+  if(!navigator.geolocation){vState.geo="denied";renderVisitor();return;}
+  navigator.geolocation.getCurrentPosition(
+    ()=>{vState.geo="granted";vState.simLoc=false;vState.step=3;renderVisitor();
+         notify("VISITOR POSITION UPDATED","Device location shared.","ok");},
+    ()=>{vState.geo="denied";renderVisitor();},
+    {enableHighAccuracy:true,timeout:8000});
+}
+
+/* ═══════════ boot ═══════════ */
+function enterApp(){
+  document.getElementById("landing").classList.add("hide");
+  document.getElementById("app").classList.add("on");
+  initMap();
+  renderAll();
+  setTimeout(fixMap,80);
+  notify("SYSTEM ONLINE","Simulation mode. No aircraft connected.","ok");
+}
+addEventListener("resize",fixMap);
+addEventListener("error",e=>{
+  const l=document.getElementById("landing");
+  if(l&&!l.classList.contains("hide")) return;
+  try{ notify("APPLICATION ERROR", e.message||"Unexpected error", "bad"); }catch{}
+});
+try{ renderAll(); }
+catch(err){
+  document.getElementById("landing").insertAdjacentHTML("beforeend",
+    `<p style="color:var(--bad);font-size:12px;margin-top:14px">Startup error: ${err.message}</p>`);
+  console.error(err);
+}
+</script>
+
+
+</body></html>
