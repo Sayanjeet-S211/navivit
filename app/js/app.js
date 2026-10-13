@@ -26,7 +26,7 @@ const S = {
   visitor: null, mission: null, aircraft: null, source: 'visitor', link: 'up',
   commands: new Map(), events: [], arrival: { reached: false, landed: null },
   showRaw: false, spark: [], wake: 'off', qrPad: null, layers: settings.get('layers', { network: false, nodes: false, buffer: true }),
-  feedback: null, banners: [], dismissed: new Set(), staleRequests: new Set()
+  feedback: null, banners: [], dismissed: new Set(), staleRequests: new Set(), closedSessions: new Set()
 };
 
 /* ======================================================================= boot */
@@ -69,7 +69,7 @@ function setBase(k) { settings.set('mapStyle', k); map.setBase(k); }
 
 /* ============================================================ providers */
 async function setMode(mode, { initial = false } = {}) {
-  if (!initial) await endSession({ silent: true });
+  if (!initial) await endSession();
   provider?.destroy?.();
   S.mode = mode; settings.set('mode', mode);
   S.conn = 'connecting'; S.connError = null;
@@ -104,6 +104,7 @@ function updatePill() {
 }
 
 function onEvent(ev) {
+  if (ev.sessionId && S.closedSessions.has(ev.sessionId)) return;
   fresh.mark('ground', provider.now());
   switch (ev.type) {
     case 'dispatch':
@@ -295,7 +296,7 @@ VIEWS.directory = {
     let list = campus.destinations.filter(d => (S.cat === 'all' || d.category === S.cat) && (!S.favOnly || S.favorites.has(d.id)) && (!q || d.name.toLowerCase().includes(q) || d.category.toLowerCase().includes(q)));
     const o = S.origin;
     return `<div class="sheet-body"><div class="sheet-head">${backBtn('welcome', 'Change starting point')}<h2>Where to?</h2></div>
-      <p class="small muted" style="margin:-6px 0 12px">From <b style="color:var(--text)">${esc(o.label)}</b> · <button class="btn ghost" style="min-height:36px;padding:0 6px" data-act="goto" data-to="welcome">change</button></p>
+      <p class="small muted" style="margin:-6px 0 12px">From <b style="color:var(--text)">${esc(o.label)}</b> · <button class="btn ghost" style="min-height:44px;padding:0 8px" data-act="goto" data-to="welcome">change</button></p>
       <div class="search">${icon('search')}<input id="dest-q" type="search" placeholder="Search 36 destinations" value="${esc(S.query)}" autocomplete="off" aria-label="Search destinations"></div>
       <div class="chips" role="group" aria-label="Filter by category" style="margin-top:10px">
         <button class="filter-chip" data-act="cat" data-cat="all" aria-pressed="${S.cat === 'all' && !S.favOnly}">All</button>
@@ -590,8 +591,8 @@ const ACTIONS = {
   'toggle-raw': () => { S.showRaw = !S.showRaw; render(); },
   compass: () => heading.start(),
   feedback: b => { S.feedback = b.dataset.v; const all = settings.get('feedback', []); all.push({ v: S.feedback, d: S.plan?.destination.id, t: Date.now() }); settings.set('feedback', all.slice(-20)); render(); },
-  another: async () => { const origin = S.origin; await endSession({ silent: true }); S.origin = origin; go('directory'); },
-  finish: async () => { await endSession({ silent: true }); S.origin = null; map.setOrigin(null); map.setPlan(null); go('welcome'); },
+  another: () => { const origin = S.origin; endSession(); S.origin = origin; map.setOrigin(origin); go('directory'); },
+  finish: () => { endSession(); S.origin = null; map.setOrigin(null); map.setPlan(null); go('welcome'); },
   close: () => closeOverlay()
 };
 
@@ -782,14 +783,19 @@ function applyCommand(ev) {
 const cmdLabel = t => ({ pause: 'Wait for me', resume: 'Resume guidance', end: 'End guidance', abort: 'Emergency stop' }[t] || t);
 const commandReason = r => ({ position_not_fresh: 'NAVI needs a fresh position from your phone before resuming.', visitor_off_route: 'You seem to be off the route.', not_paused: 'NAVI is not paused.', not_leading: 'NAVI is not leading right now.', no_active_guidance: 'No guidance is active.', aircraft_link_lost: 'The ground station cannot reach the aircraft right now.' }[r] || r || '');
 
+/** End the visitor session: local state is cleared at once; the ground station is told in the
+ *  background (it still recovers any airborne aircraft). Late events from it are ignored. */
 async function endSession() {
   stopSharing(); stopLocate();
-  try { await provider?.closeSession?.(); } catch {}
+  const sid = provider?.session?.sessionId;
+  if (sid) S.closedSessions.add(sid);
+  const closing = provider?.closeSession?.().catch(() => {});
   Object.assign(S, { plan: null, request: null, mission: null, aircraft: null, visitor: null, idemKey: null, source: 'visitor', arrival: { reached: false, landed: null }, feedback: null, destinationId: null, detailsOpen: false, cancelError: null });
   S.sharing = { status: 'off', error: null, sent: 0, acked: 0, rejected: 0, lastReject: null, handedOver: false };
   S.commands.clear(); S.events = []; fresh.clear(); S.dismissed.clear();
   try { sessionStorage.clear(); } catch {}
   map?.setPlan(null); map?.setVisitor(null); map?.setAircraft(null); map?.setLanding(null);
+  await closing;
 }
 
 /* ============================================================ live refresh */

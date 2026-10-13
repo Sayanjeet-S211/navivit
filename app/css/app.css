@@ -43,7 +43,7 @@ p{margin:0}
 /* ---------- frame ---------- */
 .app{position:fixed;inset:0;display:grid;grid-template-rows:var(--top) minmax(0,1fr);grid-template-columns:minmax(0,1fr);overflow:hidden}
 .topbar{display:flex;align-items:center;gap:6px;min-width:0;padding:env(safe-area-inset-top) max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));background:var(--base);border-bottom:1px solid var(--line);z-index:1000;position:relative}
-.brand{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text);min-height:44px}
+.brand{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:var(--text);min-height:44px;min-width:44px}
 .mark{width:28px;height:30px;display:grid;place-items:center;border:1.5px solid var(--accent);border-radius:9px 3px 9px 3px;color:var(--accent);font:700 17px var(--head)}
 .word{font:700 17px var(--head);letter-spacing:.14em}
 .spacer{flex:1 1 0;min-width:0}
@@ -140,7 +140,7 @@ p{margin:0}
 .chip.accent{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 50%,transparent);background:var(--accent-soft)}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
-.filter-chip{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--text);font-size:14px;font-weight:500;white-space:nowrap;cursor:pointer}
+.filter-chip{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--text);font-size:14px;font-weight:500;white-space:nowrap;cursor:pointer}
 .filter-chip[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:15px}
 .kv dt{color:var(--text2)}
@@ -263,11 +263,11 @@ details.more[open] summary::after{content:"–"}
 .banner.info .ic{color:var(--secondary)}
 .banner.caution{border-color:var(--caution)}.banner.caution .ic{color:var(--caution)}
 .banner.critical{border-color:var(--danger);background:color-mix(in srgb,var(--danger) 12%,var(--surface))}.banner.critical .ic{color:var(--danger)}
-.banner .btn{min-height:40px;padding:0 12px;font-size:14px}
+.banner .btn{min-height:44px;padding:0 12px;font-size:14px}
 .banner span{display:block;font-size:13.5px;line-height:1.4;color:var(--text2)}
 .banner.compact{align-items:center;padding:4px 6px 4px 12px}
 .banner.compact .ic{margin-top:0}
-.banner-title{display:block;width:100%;min-height:40px;text-align:left;background:none;border:0;padding:0;cursor:pointer;color:var(--text)}
+.banner-title{display:block;width:100%;min-height:44px;text-align:left;background:none;border:0;padding:0;cursor:pointer;color:var(--text)}
 .banner-title b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- overlay sheets ---------- */

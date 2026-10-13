@@ -47,9 +47,9 @@ export class DemoProvider extends Emitter {
   async action(type, commandId) { return this._call(() => this.gs.action(this._s(), { commandId, type })); }
   async closeSession() {
     if (!this.session) return { closed: true };
-    const r = await this._call(() => this.gs.closeSession(this.session.sessionId)).catch(() => ({ closed: false }));
-    this.session = null; this.stopSimulatedVisitor();
-    return r;
+    const id = this.session.sessionId;
+    this.session = null; this.stopSimulatedVisitor(); // a new session can start while this one closes
+    return this._call(() => this.gs.closeSession(id)).catch(() => ({ closed: false }));
   }
   sendSample(sample) {
     if (this.linkDown || !this.session) return false;

@@ -2,6 +2,10 @@
 
 Showcase website for NAVI, an autonomous quadcopter that leads visitors across the VIT Chennai campus. It is a static site with no build step: open `index.html` through any web server.
 
+## Mobile visitor app
+
+`app/` holds the NAVI visitor guide, a mobile Progressive Web App with a labelled demo mode (simulated aircraft), a live-mode adapter, a dependency-free mock ground station and an operator console. See [`app/README.md`](app/README.md) for setup, the API, the deployment plan and the feature traceability table. Online demo: `https://sayanjeet-s211.github.io/navivit/app/`.
+
 ## Run locally
 
 ```sh

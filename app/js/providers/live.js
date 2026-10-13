@@ -82,9 +82,9 @@ export class LiveProvider extends Emitter {
   }
   async closeSession() {
     if (!this.session) return { closed: true };
-    const id = this.session.sessionId;
-    try { return await this._fetch(`visitor-sessions/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
-    finally { this.session = null; const ws = this.ws; this.ws = null; ws?.close(); }
+    const { sessionId: id, token } = this.session;
+    this.session = null; const ws = this.ws; this.ws = null; ws?.close(); // no reconnect for a closed session
+    return this._fetch(`visitor-sessions/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
   }
 }
 
