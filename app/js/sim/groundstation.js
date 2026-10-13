@@ -177,6 +177,42 @@ export class GroundStation {
     return { type: 'snapshot', request: this._requestView(s), mission: s.mission?.status(), aircraft: s.mission?.lastTelemetry || null, source: s.source, commands: [...s.commands.values()].slice(-10).map(c => ({ commandId: c.commandId, command: c.type, state: c.state, reason: c.reason })) };
   }
 
+  /* ---------- operator ---------- */
+  /** What the operator console shows: resources, requests, mission and telemetry diagnostics. */
+  operatorView() {
+    const now = this.now();
+    return {
+      autoApprove: this.autoApprove, aircraftAvailable: this.aircraftAvailable, pads: this.pads(),
+      sessions: [...this.sessions.values()].map(s => {
+        const m = s.mission, st = m?.status(), t = m?.lastTelemetry;
+        return {
+          sessionId: s.id, createdAt: s.created, lastSeenAgeS: (now - s.lastSeen) / 1000, closed: !!s.closed, source: s.source,
+          request: s.request ? { requestId: s.request.id, state: s.request.state, reason: s.request.reason, destination: s.request.plan?.destination?.name, pad: s.request.plan?.startPad?.name, legs: s.request.plan?.legs?.length, plannedCoveragePct: s.request.plan?.coverage?.percent ?? null, guidedM: s.request.plan?.coverage?.guidedM } : null,
+          mission: st ? { status: st.status, holdReason: st.holdReason, legIndex: st.legIndex, legCount: st.legCount, handoffPadId: st.handoffPadId, observed: st.observed, leadM: st.leadM, visitorProgressM: st.visitorProgressM, guidedLengthM: st.guidedLengthM, lastAcceptedAgeS: st.lastAcceptedAgeS, rc: !!m.rc } : null,
+          aircraft: t ? { mode: t.mode, altM: t.altM, batteryV: t.batteryV, batteryPct: t.batteryPct, ekf: t.ekf, sats: t.sats, hdop: t.hdop, rssiDbm: t.rssiDbm, ageS: (now - t.measuredAt) / 1000 } : null,
+          lastFix: s.lastFix ? { accuracyM: s.lastFix.acc, ageS: (now - s.lastFix.t) / 1000 } : null,
+          faults: [...s.faults]
+        };
+      })
+    };
+  }
+  /** Operator actions by path, mirroring the server's /api/operator routes (used by the demo). */
+  operatorCall(path, body = {}) {
+    let m;
+    if (path === 'operator/sessions') return this.operatorView();
+    if (path === 'operator/auto-approve') { this.autoApprove = !!body.on; return { autoApprove: this.autoApprove }; }
+    if (path === 'operator/aircraft') return this.setAircraft(body.available);
+    if ((m = path.match(/^operator\/pads\/([^/]+)$/))) { if (typeof body.handoff === 'boolean') return this.setHandoff(m[1], body.handoff); return this.setPad(m[1], body.status); }
+    if ((m = path.match(/^operator\/requests\/([^/]+)\/decision$/))) return this.decide(m[1], !!body.approve, null);
+    if ((m = path.match(/^operator\/sessions\/([^/]+)\/(rc|faults|handover)$/))) {
+      const s = this.sessions.get(m[1]); if (!s) return { error: 'unknown_session' };
+      if (m[2] === 'rc') return this.rcTakeover(s, !!body.on);
+      if (m[2] === 'faults') return this.fault(s, body.name, !!body.on);
+      return this.handover(s, body.source);
+    }
+    return { error: 'not_found' };
+  }
+
   /* ---------- time ---------- */
   tick(dt) {
     const now = this.now();

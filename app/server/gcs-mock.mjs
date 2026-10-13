@@ -147,20 +147,7 @@ route('POST', '/api/sessions/:id/actions', async (req, res, { s }) => {
 }, { auth: 'visitor' });
 
 /* operator */
-route('GET', '/api/operator/sessions', () => ({
-  autoApprove: gs.autoApprove, aircraftAvailable: gs.aircraftAvailable, pads: gs.pads(),
-  sessions: [...gs.sessions.values()].map(s => {
-    const m = s.mission, st = m?.status(), t = m?.lastTelemetry;
-    return {
-      sessionId: s.id, createdAt: s.created, lastSeenAgeS: (Date.now() - s.lastSeen) / 1000, closed: !!s.closed, source: s.source,
-      request: s.request ? { requestId: s.request.id, state: s.request.state, reason: s.request.reason, destination: s.request.plan?.destination?.name, pad: s.request.plan?.startPad?.name, legs: s.request.plan?.legs?.length, plannedCoveragePct: s.request.plan?.coverage?.percent ?? null, guidedM: s.request.plan?.coverage?.guidedM } : null,
-      mission: st ? { status: st.status, holdReason: st.holdReason, legIndex: st.legIndex, legCount: st.legCount, handoffPadId: st.handoffPadId, observed: st.observed, leadM: st.leadM, visitorProgressM: st.visitorProgressM, guidedLengthM: st.guidedLengthM, lastAcceptedAgeS: st.lastAcceptedAgeS, rc: !!m.rc } : null,
-      aircraft: t ? { mode: t.mode, altM: t.altM, batteryV: t.batteryV, batteryPct: t.batteryPct, ekf: t.ekf, sats: t.sats, hdop: t.hdop, rssiDbm: t.rssiDbm, ageS: (Date.now() - t.measuredAt) / 1000 } : null,
-      lastFix: s.lastFix ? { accuracyM: s.lastFix.acc, ageS: (Date.now() - s.lastFix.t) / 1000 } : null,
-      faults: [...s.faults]
-    };
-  })
-}), { auth: 'operator' });
+route('GET', '/api/operator/sessions', () => gs.operatorView(), { auth: 'operator' });
 route('POST', '/api/operator/auto-approve', async req => { const b = await readJson(req); gs.autoApprove = !!b.on; return { autoApprove: gs.autoApprove }; }, { auth: 'operator' });
 route('POST', '/api/operator/requests/:rid/decision', async (req, res, { params }) => {
   const b = await readJson(req);

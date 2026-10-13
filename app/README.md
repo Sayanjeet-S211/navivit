@@ -10,7 +10,8 @@ A zero-install Progressive Web App for visitors to VIT Chennai. A visitor sets a
 | --- | --- |
 | Demo, no install | Open `app/` from any static server, e.g. the GitHub Pages site: `https://sayanjeet-s211.github.io/navivit/app/`, or `python3 -m http.server` in the repo root and visit `http://localhost:8000/app/` |
 | Live mode with the mock ground station | `cd app && node server/gcs-mock.mjs` (Node 18.17+, no dependencies), open `http://localhost:8080/`, then Settings → Mode → **Live ground station**. Add `--auto-approve` to skip operator approval |
-| Operator console | `http://localhost:8080/operator.html`, opens directly, no token needed. To require one, start the server with `--operator-token <secret>` (or `NAVI_OPERATOR_TOKEN`) |
+| Operator console (demo) | `https://sayanjeet-s211.github.io/navivit/app/operator.html` with the visitor app open in another tab of the same browser: no server, everything simulated |
+| Operator console (mock server) | `http://localhost:8080/operator.html`, opens directly, no token needed. To require one, start the server with `--operator-token <secret>` (or `NAVI_OPERATOR_TOKEN`) |
 | Phones on the campus network | Run with HTTPS: `node server/gcs-mock.mjs --host 0.0.0.0 --port 8443 --cert cert.pem --key key.pem` (see Deployment) |
 | Tests | `node --test tests/*.test.mjs` (core + API), `node tests/e2e.mjs` (browser, needs Playwright), `node tests/budget.mjs` (first-load size) |
 

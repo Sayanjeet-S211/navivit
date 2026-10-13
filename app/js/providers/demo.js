@@ -15,8 +15,18 @@ export class DemoProvider extends Emitter {
     this.gs.on((sid, ev) => { if (sid === this.session?.sessionId) this._deliver(ev); });
     this._timer = setInterval(() => this._tick(0.1), 100);
     this.info = { kind: 'demo', label: 'Demo', aircraftSource: 'simulated', connected: true };
+    // The operator console in another tab of this browser drives this simulation (demo only).
+    try {
+      this.opChannel = new BroadcastChannel('navi-demo-operator');
+      this.opChannel.onmessage = e => {
+        const { id, path, body } = e.data || {};
+        if (!id || typeof path !== 'string') return;
+        let result; try { result = this.gs.operatorCall(path, body || {}); } catch (err) { result = { error: err.message }; }
+        this.opChannel.postMessage({ id, result: JSON.parse(JSON.stringify(result)) });
+      };
+    } catch { this.opChannel = null; }
   }
-  destroy() { clearInterval(this._timer); this.walker = null; }
+  destroy() { clearInterval(this._timer); this.walker = null; this.opChannel?.close(); }
   setSpeed(x) { this.speed = x; }
 
   _latency() { return 60 + Math.random() * 120; }

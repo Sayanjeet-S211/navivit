@@ -12,7 +12,7 @@
 <body class="op">
 <header class="topbar">
   <span class="brand"><span class="mark" aria-hidden="true">N</span><span class="word">NAVI</span></span>
-  <span class="mode-pill off" id="op-pill" role="status">Operator · not signed in</span>
+  <span class="mode-pill off" id="op-pill" role="status">Operator · connecting…</span>
   <span class="spacer"></span>
   <a class="btn ghost" href="./">Visitor app</a>
 </header>
@@ -29,6 +29,9 @@
     <p class="note" style="margin-top:12px">This console works only with a NAVI ground station serving this page. The bundled mock ground station simulates the aircraft; it cannot fly real equipment.</p>
   </section>
   <div id="console" hidden>
+    <section class="card" id="demo-note" hidden>
+      <p><b>Demo operator console.</b> Everything here is simulated in this browser. Open the <a href="./" target="_blank" rel="noopener">visitor app</a> in another tab, plan a trip and request a guide; it appears below. Turn auto-approve off to approve trips yourself.</p>
+    </section>
     <section class="card">
       <div class="between"><h2>Dispatch</h2><div class="toggle-row" style="border:0;min-height:0"><span>Auto-approve</span><button class="switch" role="switch" id="auto" aria-checked="false" aria-label="Auto-approve requests"></button></div></div>
       <p class="small muted">Every guided trip needs your approval unless auto-approve is on.</p>

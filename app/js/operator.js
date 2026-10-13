@@ -1,13 +1,27 @@
-// Operator console for a NAVI ground station (the bundled mock simulates the aircraft).
-// Token-authenticated; the token is kept in sessionStorage for this tab only.
+// Operator console. With a NAVI ground station serving this page it uses the /api/operator routes
+// (token only if the server requires one). Without one (e.g. GitHub Pages) it runs in DEMO mode:
+// it drives the simulated ground station of the visitor app open in another tab of this browser.
 import { DeviceLocation } from './sensors.js';
 import { $, esc, announce } from './ui.js';
 import { fmtDist } from './config.js';
 
-let token = null, timer = null, data = null, assisting = null; // assisting: { sessionId, loc }
+let token = null, timer = null, data = null, assisting = null, mode = 'server'; // assisting: { sessionId, loc }
+const channel = 'BroadcastChannel' in window ? new BroadcastChannel('navi-demo-operator') : null;
+const waiting = new Map();
+channel?.addEventListener('message', e => { const w = waiting.get(e.data?.id); if (w && 'result' in e.data) { waiting.delete(e.data.id); w(e.data.result); } });
+function demoCall(path, body) {
+  return new Promise((resolve, reject) => {
+    if (!channel) return reject(Object.assign(new Error('This browser cannot link tabs'), { status: 0 }));
+    const id = Math.random().toString(36).slice(2);
+    const t = setTimeout(() => { waiting.delete(id); reject(Object.assign(new Error('no_visitor_tab'), { status: 0 })); }, 1500);
+    waiting.set(id, r => { clearTimeout(t); r?.error ? reject(new Error(r.error)) : resolve(r); });
+    channel.postMessage({ id, path, body });
+  });
+}
 try { token = sessionStorage.getItem('navi.operator'); } catch {}
 
 async function call(path, { method = 'GET', body } = {}) {
+  if (mode === 'demo') return demoCall(path, body);
   const r = await fetch('/api/' + path, { method, headers: { ...(token ? { Authorization: 'Bearer ' + token } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store', credentials: 'same-origin' });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw Object.assign(new Error(j.error || 'http_' + r.status), { status: r.status });
@@ -23,14 +37,16 @@ $('#signin-form').addEventListener('submit', async e => {
 
 function start() {
   $('#signin').hidden = true; $('#console').hidden = false;
-  const p = $('#op-pill'); p.className = 'mode-pill live'; p.textContent = 'Operator · signed in';
+  const p = $('#op-pill');
+  if (mode === 'demo') { p.className = 'mode-pill demo'; p.textContent = 'Operator · demo (simulated)'; $('#demo-note').hidden = false; }
+  else { p.className = 'mode-pill live'; p.textContent = 'Operator · signed in'; }
   poll(); timer = setInterval(poll, 1000);
 }
 
 async function poll() {
   try { data = await call('operator/sessions'); render(); $('#op-status').textContent = `Updated ${new Date().toLocaleTimeString()}`; }
   catch (e) {
-    $('#op-status').textContent = 'Ground station not reachable: ' + e.message;
+    $('#op-status').textContent = mode === 'demo' ? 'No visitor app open: open the visitor app in another tab of this browser (link above).' : 'Ground station not reachable: ' + e.message;
     if (e.status === 401) { clearInterval(timer); try { sessionStorage.removeItem('navi.operator'); } catch {} location.reload(); }
   }
 }
@@ -91,6 +107,7 @@ document.addEventListener('change', async e => {
 /** Handover: this device's own location becomes the visitor position for that session. Fixes are
  *  sent as they arrive and dropped if the request fails; nothing is queued for later. */
 async function handover(sessionId, source) {
+  if (mode === 'demo') return call(`operator/sessions/${encodeURIComponent(sessionId)}/handover`, { method: 'POST', body: { source } }); // the simulation supplies the operator device's positions
   if (source === 'operator-device') {
     assisting?.loc.stop();
     const loc = new DeviceLocation({
@@ -103,5 +120,11 @@ async function handover(sessionId, source) {
   await call(`operator/sessions/${encodeURIComponent(sessionId)}/handover`, { method: 'POST', body: { source } });
 }
 
-// Open straight away when the ground station needs no token; otherwise show the sign-in form.
-call('operator/sessions').then(start).catch(() => { token = null; try { sessionStorage.removeItem('navi.operator'); } catch {} });
+// A NAVI ground station serving this page? Use it (sign-in only if it asks for a token).
+// Otherwise run the demo console against the visitor app in another tab.
+(async () => {
+  let server = false;
+  try { const r = await fetch('/api/health', { cache: 'no-store' }); server = r.ok && (await r.json()).service === 'navi-gcs'; } catch {}
+  if (!server) { mode = 'demo'; return start(); }
+  call('operator/sessions').then(start).catch(() => { token = null; try { sessionStorage.removeItem('navi.operator'); } catch {} });
+})();
