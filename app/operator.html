@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>NAVI · Operator console</title>
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/operator.css">
+</head>
+<body class="op">
+<header class="topbar">
+  <span class="brand"><span class="mark" aria-hidden="true">N</span><span class="word">NAVI</span></span>
+  <span class="mode-pill off" id="op-pill" role="status">Operator · not signed in</span>
+  <span class="spacer"></span>
+  <a class="btn ghost" href="./">Visitor app</a>
+</header>
+<main class="op-main">
+  <section class="card" id="signin">
+    <h1>Operator console</h1>
+    <p class="lead">For the safety operator of a NAVI ground station. Enter the operator token printed when the ground station started. It is kept only for this browser tab.</p>
+    <form id="signin-form" class="row" autocomplete="off">
+      <label class="sr-only" for="tok">Operator token</label>
+      <input id="tok" class="op-input" type="password" placeholder="Operator token" required>
+      <button class="btn primary" type="submit">Sign in</button>
+    </form>
+    <p class="small" id="signin-err" role="alert" style="color:var(--danger);margin-top:8px"></p>
+    <p class="note" style="margin-top:12px">This console works only with a NAVI ground station serving this page. The bundled mock ground station simulates the aircraft; it cannot fly real equipment.</p>
+  </section>
+  <div id="console" hidden>
+    <section class="card">
+      <div class="between"><h2>Dispatch</h2><div class="toggle-row" style="border:0;min-height:0"><span>Auto-approve</span><button class="switch" role="switch" id="auto" aria-checked="false" aria-label="Auto-approve requests"></button></div></div>
+      <p class="small muted">Every guided trip needs your approval unless auto-approve is on.</p>
+    </section>
+    <section class="card"><h2>Launch pads</h2><div id="pads" class="op-pads"></div></section>
+    <section><h2 style="margin:18px 0 8px">Visitor sessions</h2><div id="sessions" class="op-sessions"><p class="muted">No sessions yet.</p></div></section>
+    <p class="small muted" id="op-status" style="margin-top:16px"></p>
+  </div>
+</main>
+<div id="sr-polite" class="sr-only" aria-live="polite"></div>
+<script type="module" src="js/operator.js"></script>
+</body>
+</html>
