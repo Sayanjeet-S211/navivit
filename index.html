@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NAVI · Navigation Assistant for Visitor Interaction</title>
+<meta name="description" content="NAVI is an autonomous quadcopter that leads visitors across the VIT Chennai campus: route graph, launch pads, a human pacing controller and a deterministic safety state machine on an open ArduPilot F450.">
+<meta name="theme-color" content="#0b141a">
+<meta property="og:title" content="NAVI · Navigation Assistant for Visitor Interaction">
+<meta property="og:description" content="An autonomous micro aerial vehicle that leads campus visitors to their destination. VIT Chennai · SMEC · SENSE · SCOPE.">
+<meta property="og:image" content="assets/img/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='4' width='52' height='56' rx='6' fill='%230b141a' stroke='%2395e5c9' stroke-width='3'/%3E%3Ctext x='32' y='45' font-family='Georgia' font-size='34' text-anchor='middle' fill='%2395e5c9'%3EN%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="assets/img/cad-iso.webp" as="image" type="image/webp">
+<link rel="stylesheet" href="assets/css/site.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<a class="sr-only" href="#concept">Skip to content</a>
+
+<header class="site-header">
+  <a class="brand" href="#top" aria-label="NAVI home"><span class="brandmark">N</span><span>NAVI<small>NAVIGATION ASSISTANT FOR VISITOR INTERACTION</small></span></a>
+  <nav class="site-nav" id="site-nav" aria-label="Sections">
+    <a href="#concept">01<span>Concept</span></a>
+    <a href="#airframe">02<span>Airframe</span></a>
+    <a href="#hardware">03<span>Hardware</span></a>
+    <a href="#telemetry">04<span>Telemetry</span></a>
+    <a href="#campus">05<span>Campus</span></a>
+    <a href="#software">06<span>Software</span></a>
+    <a href="#safety">07<span>Safety</span></a>
+    <a href="#roadmap">08<span>Roadmap</span></a>
+    <a href="#team">09<span>Team</span></a>
+  </nav>
+  <div class="header-actions">
+    <button class="btn sm ghost" id="menu-toggle" aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <button class="btn primary sm" id="present">Present ↗</button>
+  </div>
+</header>
+
+<main>
+<!-- ================= HERO ================= -->
+<section class="hero" id="top" data-tour="Overview">
+  <div class="ribbon">
+    <span><i class="status-dot"></i>N01 / 20% REVIEW · DESIGN &amp; SIMULATION STAGE</span>
+    <span class="hide-sm">VIT CHENNAI · SMEC · SENSE · SCOPE</span>
+    <button type="button" data-open-sources>Design basis &amp; sources ↗</button>
+  </div>
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow">Autonomous campus guidance quadcopter</span>
+      <h1>A guide you simply <em>follow.</em></h1>
+      <p class="lead">NAVI computes a route over the surveyed campus path graph, takes off from a launch pad, flies ahead of the visitor at a safe lead distance, waits when they fall behind, and lands at a pad near their destination.</p>
+      <div class="cta-row">
+        <a class="btn primary" href="#airframe">Inspect the airframe ↓</a>
+        <a class="btn" href="#telemetry">Run the pacing simulation</a>
+        <a class="btn" href="app/">Open the visitor app (demo)</a>
+      </div>
+      <dl class="hero-stats">
+        <div><dd>36</dd><dt>Destinations</dt></div>
+        <div><dd>6</dd><dt>Launch pads</dt></div>
+        <div><dd>350<small>m</small></dd><dt>Max leg</dt></div>
+        <div><dd>≈15<small>m</small></dd><dt>Lead distance</dt></div>
+        <div><dd>₹25k</dd><dt>Self-funded</dt></div>
+      </dl>
+    </div>
+    <figure class="hero-visual">
+      <img src="assets/img/cad-iso.webp" alt="Render of the NAVI F450 quadcopter design model: red front arms, orange front propellers, GPS mast and under-slung blue battery" width="1600" height="900" fetchpriority="high">
+      <div class="callout" style="left:44.6%;top:9%"><i></i><span>NEO-M8N GPS <b>+ compass mast</b></span></div>
+      <div class="callout left" style="left:44%;top:35%"><i></i><span>F405 · <b>ArduPilot</b></span></div>
+      <div class="callout" style="left:83%;top:36.8%"><i></i><span>1045 <b>· 254 mm</b></span></div>
+      <div class="callout" style="left:50.5%;top:51.5%"><i></i><span>3S <b>3300 mAh</b></span></div>
+      <figcaption>DESIGN MODEL · NOMINAL F450 LAYOUT · NOT A PHOTOGRAPH</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ================= 01 CONCEPT ================= -->
+<section class="section" id="concept" data-tour="Concept">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">01 — Concept</span>
+      <h2>Signage shows a map. <em>NAVI shows the way.</em></h2>
+      <p class="lead">First-time visitors to a large campus — mostly visiting parents and guests — routinely get lost. Every existing aid asks them to work out where they are first. A guide you simply follow removes that step.</p>
+    </div>
+
+    <div class="grid g4">
+      <article class="card problem-card reveal"><span class="num">P1 · PASSIVE</span><h4>Signage is passive.</h4><p>A board shows a map, not a route — and the visitor must first find themselves on it.</p></article>
+      <article class="card problem-card reveal"><span class="num">P2 · DOES NOT SCALE</span><h4>Human guides do not scale.</h4><p>Demand peaks on event days, exactly when staff and student volunteers are busiest.</p></article>
+      <article class="card problem-card reveal"><span class="num">P3 · STOPS AT THE GATE</span><h4>Phone maps stop at the gate.</h4><p>Commercial navigation apps carry little internal campus path detail and cannot resolve routes inside it.</p></article>
+      <article class="card problem-card reveal"><span class="num">P4 · STILL A MAP</span><h4>The wayfinder is still a map.</h4><p>VIT Chennai’s wayfinder has excellent building data — and is NAVI’s data source — but self-localisation remains.</p></article>
+    </div>
+
+    <div class="journey reveal">
+      <div class="journey-row">
+        <span class="label">Today</span>
+        <div class="steps-line">
+          <div class="step-chip"><b>01</b><span>Arrive at the gate knowing a name, not the campus</span></div>
+          <div class="step-chip"><b>02</b><span>Read a sign or phone map</span></div>
+          <div class="step-chip friction"><b>03 · FRICTION</b><span>“Where am I on this map?”</span></div>
+          <div class="step-chip"><b>04</b><span>Translate the map into turns</span></div>
+          <div class="step-chip"><b>05</b><span>Arrive — or ask a busy person</span></div>
+        </div>
+      </div>
+      <div class="journey-row">
+        <span class="label">With NAVI</span>
+        <div class="steps-line">
+          <div class="step-chip navi"><b>01</b><span>Pick a destination at the kiosk or on a phone</span></div>
+          <div class="step-chip navi"><b>02</b><span>Route checked against geofence and whitelist</span></div>
+          <div class="step-chip navi"><b>03</b><span>Follow the aircraft, ≈15 m ahead</span></div>
+          <div class="step-chip navi"><b>04</b><span>It lands at the pad by the entrance</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-head reveal">
+      <h3>The aircraft paces itself to you.</h3>
+      <p>It holds a lead of about 15 m, slows when the visitor slows, and holds position when they stop. Waypoint flight is a solved problem; coupling it to an uninstrumented, walking human is the contribution.</p>
+    </div>
+    <figure class="pacing-fig reveal">
+      <svg id="pacing-svg" viewBox="0 0 1000 230" role="img" aria-label="Animated schematic: the aircraft leads the visitor along a path at about 15 metres and holds when the visitor stops"></svg>
+      <figcaption><span>CONCEPTUAL SCHEMATIC · NOT A REAL CAMPUS PATH</span><span id="pacing-state">LEAD ≈ 15 m</span></figcaption>
+    </figure>
+
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card reveal"><span class="label">In scope</span>
+        <ul class="scope-list">
+          <li>Autonomous outdoor flights in daylight and fair weather</li>
+          <li>36 mapped campus destinations on surveyed, inspected routes</li>
+          <li>Single flight legs of at most 350 m</li>
+          <li>One visitor or a small group at a time; battery swaps at pads</li>
+        </ul>
+      </div>
+      <div class="card reveal"><span class="label">Out of scope</span>
+        <ul class="scope-list out">
+          <li>Indoor flight; night or bad-weather operation</li>
+          <li>Simultaneous multi-visitor guidance</li>
+          <li>Autonomous charging docks; physical payload delivery</li>
+          <li>Live obstacle detection and dynamic re-routing</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card reveal" style="margin-top:16px;padding:28px">
+      <span class="label">Where the technical contribution lies</span>
+      <p class="contrib" style="margin-top:14px">Coupling an autonomous aircraft to the walking pace of an <em>uninstrumented human</em> through a ground-based pacing controller — combined with graph routing, set-cover launch-pad optimisation and geofencing. The flight stack is off the shelf, by choice.</p>
+    </div>
+
+    <div class="facts reveal">
+      <div><span class="label">Institution</span><b>VIT Chennai</b></div>
+      <div><span class="label">Schools</span><b>SMEC · SENSE · SCOPE</b></div>
+      <div><span class="label">Budget</span><b>Rs 25,000 pool</b></div>
+      <div><span class="label">Funding</span><b>5 members × Rs 5,000</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 02 AIRFRAME ================= -->
+<section class="section" id="airframe" data-tour="Airframe">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">02 — Airframe</span>
+      <h2>Built to be <em>understood.</em></h2>
+      <p class="lead">An F450 quadcopter on an open ArduPilot stack, modelled part by part. Scroll to inspect it layer by layer — then take it apart yourself.</p>
+    </div>
+
+    <div class="scrolly" id="scrolly">
+      <div class="scrolly-stage">
+        <div class="stage-box" id="scrolly-box">
+          <canvas id="scrolly-canvas" role="img" aria-label="3D design model of the NAVI quadcopter. The camera moves as you scroll through the chapters."></canvas>
+          <div class="stage-hud"><span>INSPECTION · <b id="sc-count">01 / 07</b></span><span id="sc-layer">ASSEMBLED</span></div>
+          <div class="stage-foot"><span class="chapter-dots" id="sc-dots" aria-hidden="true"></span><span>DESIGN MODEL · NOT A PHOTOGRAPH</span></div>
+          <div class="loading" id="sc-loading"><div>LOADING CAD MODEL<div class="bar"><i></i></div></div></div>
+        </div>
+      </div>
+      <div class="scrolly-steps">
+        <div class="chapter" data-chapter="0"><div class="chapter-card">
+          <span class="label"><span>01 · Assembled</span><span>54 bodies</span></span>
+          <h3>The design model</h3>
+          <p>An F450 airframe with a 450 mm wheelbase, flown by open ArduPilot firmware. Every part is an off-the-shelf component the team can buy, wire and replace.</p>
+          <ul><li>+X forward: red arms, orange propellers; Z up</li><li>Five subsystem layers, fourteen components</li><li>Nominal geometry — assembly pending</li></ul>
+        </div></div>
+        <div class="chapter" data-chapter="1"><div class="chapter-card">
+          <span class="label"><span><i class="layer-key" style="background:#b9ccd1"></i>02 · Structural</span><span>L1</span></span>
+          <h3>A frame that is also a power board</h3>
+          <p>Glass-fibre plates sandwich the four arms. The bottom plate doubles as the power distribution board — its copper traces carry battery current to each ESC. Tall legs lift the under-slung battery clear of the pad.</p>
+          <ul><li>Top plate 116 mm · bottom plate / PDB 140 mm</li><li>Landing gear 150 mm below the bottom plate</li><li>Frame kit confirmed at Rs 4,059</li></ul>
+        </div></div>
+        <div class="chapter" data-chapter="2"><div class="chapter-card">
+          <span class="label"><span><i class="layer-key" style="background:#edc18a"></i>03 · Propulsion</span><span>L2</span></span>
+          <h3>Four motors, four ESCs, one thrust budget</h3>
+          <p>A2212 1000KV motors swing 10-inch 1045 propellers on 3S. Each motor has its own SimonK 30A ESC under the arm, driven by plain PWM from the flight controller.</p>
+          <ul><li>Quad X: M1 front-right · M2 rear-left · M3 front-left · M4 rear-right</li><li>Orange props mark the front for the safety operator</li><li>A spare motor is budgeted (Rs 479)</li></ul>
+        </div></div>
+        <div class="chapter" data-chapter="3"><div class="chapter-card">
+          <span class="label"><span><i class="layer-key" style="background:#95e5c9"></i>04 · Avionics</span><span>L3</span></span>
+          <h3>The brain floats on rubber</h3>
+          <p>The F405 flight controller sits at the centre of mass on four M3 anti-vibration grommets. Keeping motor vibration out of the IMU is what keeps the EKF’s position estimate trustworthy.</p>
+          <ul><li>Official ArduPilot firmware; barometer; 3+ UARTs</li><li>30.5 mm mounting pattern · forward arrow to +X</li><li>No companion computer on board</li></ul>
+        </div></div>
+        <div class="chapter" data-chapter="4"><div class="chapter-card">
+          <span class="label"><span><i class="layer-key" style="background:#8ec5ec"></i>05 · Sensor mast &amp; telemetry</span><span>L4</span></span>
+          <h3>A compass that reads the earth, not the aircraft</h3>
+          <p>The GPS/compass puck stands 95 mm up a mast, away from PDB current and motor wiring. Beside it: the 433 MHz SiK antenna for MAVLink, and the iA6B receiver for the independent RC link.</p>
+          <ul><li>Standard GPS: 2.5–5 m, compensated by a 15 m lead</li><li>MAVLink 2 over SiK 433 MHz to the kiosk</li><li>FlySky iBUS for instant manual takeover</li></ul>
+        </div></div>
+        <div class="chapter" data-chapter="5"><div class="chapter-card">
+          <span class="label"><span><i class="layer-key" style="background:#f0a586"></i>06 · Power bay</span><span>L5</span></span>
+          <h3>Every minute is budgeted</h3>
+          <p>A 3S 3300 mAh LiPo hangs centrally under the frame on two straps. The power module between battery and PDB feeds the FC a clean 5 V and reports voltage and current for the low-battery failsafe.</p>
+          <ul><li>Estimated 10–13 min hover — to be measured</li><li>25% reserve held back for return-to-launch</li><li>XT60 throughout</li></ul>
+        </div></div>
+        <div class="chapter" data-chapter="6"><div class="chapter-card">
+          <span class="label"><span>07 · Exploded</span><span>100%</span></span>
+          <h3>Now take it apart yourself</h3>
+          <p>The explosion follows the per-part vectors in the team’s exploded CAD model. Below, every part is clickable, every layer can be isolated, and every hotspot carries specs, wiring and budget.</p>
+          <p style="margin:16px 0 0"><a class="btn primary" href="#atelier-anchor">Open the atelier ↓</a></p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="sub-head reveal" id="atelier-anchor">
+      <h3>The atelier: explode, isolate, inspect.</h3>
+      <p>Drag the slider to separate the assembly along its CAD-defined axes. Toggle subsystem layers, click a numbered hotspot, or pick a part to read its specification, wiring and budget line.</p>
+    </div>
+    <div class="atelier reveal" id="atelier">
+      <aside class="parts-panel" aria-label="Assembly layers and parts">
+        <div class="side-heading"><span>THE ASSEMBLY</span><span id="part-count">14 parts</span></div>
+        <p class="micro">Select a part to inspect it. Hide a layer to see what it hides.</p>
+        <div id="layer-list"></div>
+      </aside>
+      <div class="stage-col">
+        <div class="atelier-stage" id="atelier-stage">
+          <canvas id="atelier-canvas" aria-label="Interactive 3D model of the NAVI F450. Drag to orbit, scroll or pinch to zoom; use the camera buttons for fixed views."></canvas>
+          <div class="overlay" id="atelier-overlay"></div>
+          <div class="stage-title"><span class="eyebrow" id="at-eyebrow">DESIGN MODEL · NOMINAL GEOMETRY</span><h4 id="at-title">Take it apart.</h4><p id="at-sub">Drag to orbit · scroll to zoom · click a marker</p></div>
+          <div class="camera-tools" role="group" aria-label="Camera views">
+            <button class="camera active" data-view="iso">ISO</button>
+            <button class="camera" data-view="top">TOP</button>
+            <button class="camera" data-view="front">FRONT</button>
+            <button class="camera" data-view="side">SIDE</button>
+          </div>
+          <div class="stage-caption"><span id="at-caption">ASSEMBLED · ALL LAYERS</span><span>+X FORWARD · Z UP · mm</span></div>
+          <div class="loading" id="at-loading"><div>LOADING CAD MODEL<div class="bar"><i></i></div></div></div>
+        </div>
+        <div class="stage-controls">
+          <div class="explode-control"><label for="explode">ASSEMBLY SEPARATION <output id="explode-value" for="explode">0%</output></label><input id="explode" type="range" min="0" max="100" value="0" step="1"></div>
+          <div class="view-tools">
+            <button class="btn" id="tg-hotspots" aria-pressed="true">Hotspots</button>
+            <button class="btn" id="tg-dims" aria-pressed="false">Dimensions</button>
+            <button class="btn" id="tg-colors" aria-pressed="false">Layer colours</button>
+            <button class="btn" id="tg-spin" aria-pressed="false">Spin props</button>
+            <button class="btn" id="tg-orbit" aria-pressed="false">Orbit</button>
+            <button class="btn" id="at-reset">Reset</button>
+          </div>
+        </div>
+        <div class="scene-footer"><span><b>450</b> mm wheelbase</span><span><b>254</b> mm props</span><span><b>150</b> mm gear</span><span>Explode vectors from <span class="mono">navi_f450_exploded.glb</span></span></div>
+      </div>
+      <aside class="inspector" id="inspector" aria-live="polite"></aside>
+    </div>
+
+    <div class="cad-meta reveal">
+      <div><span class="label">Wheelbase</span><b>450 mm</b><small>Motor-to-motor diagonal · nominal F450</small></div>
+      <div><span class="label">Propeller</span><b>254 mm</b><small>1045 · 10 × 4.5 in</small></div>
+      <div><span class="label">Landing gear</span><b>150 mm</b><small>Below bottom plate · clearance to measure</small></div>
+      <div><span class="label">Battery block</span><b>138 × 43 × 25</b><small>mm · approximate, exact pack pending</small></div>
+    </div>
+    <div class="sub-head reveal"><h3>The drawing set</h3><p>Renders exported from the team’s parametric CadQuery model (<span class="mono">navi_drone.py</span>). Every dimension is a nominal value for the planned parts, not a measurement.</p></div>
+    <div class="drawings reveal">
+      <figure class="drawing wide dark"><img src="assets/img/cad-exploded.webp" alt="Exploded render: propellers, motors, GPS mast and avionics above the plates; ESCs, battery and landing gear below" width="1600" height="900" loading="lazy"><figcaption><span>EXPLODED</span><span>Offsets: props +200 · motors +125 · avionics +75 · top +40 · ESC −30 · bottom −45 · battery −105 · gear −175 mm</span></figcaption></figure>
+      <figure class="drawing"><img src="assets/img/cad-front.webp" alt="Front orthographic view of the NAVI design model" width="1200" height="675" loading="lazy"><figcaption><span>FRONT</span><span>+X toward viewer</span></figcaption></figure>
+      <figure class="drawing"><img src="assets/img/cad-side.webp" alt="Side orthographic view showing the GPS mast, battery and 150 mm landing gear" width="1200" height="675" loading="lazy"><figcaption><span>SIDE</span><span>Mast 95 mm · gear 150 mm</span></figcaption></figure>
+      <figure class="drawing"><img src="assets/img/cad-top.webp" alt="Top orthographic view showing the 450 mm wheelbase and four 1045 propellers" width="1200" height="675" loading="lazy"><figcaption><span>TOP</span><span>450 mm wheelbase</span></figcaption></figure>
+    </div>
+    <div class="downloads reveal">
+      <a class="btn" href="navi_f450.step" download>↓ STEP <span class="muted">assembled · 1.9 MB</span></a>
+      <a class="btn" href="navi_f450_exploded.step" download>↓ STEP <span class="muted">exploded · 1.9 MB</span></a>
+      <a class="btn" href="navi_f450.stl" download>↓ STL <span class="muted">4.4 MB</span></a>
+      <a class="btn" href="navi_f450.glb" download>↓ GLB <span class="muted">assembled · 2.2 MB</span></a>
+      <a class="btn" href="navi_f450_exploded.glb" download>↓ GLB <span class="muted">exploded · 2.2 MB</span></a>
+      <a class="btn" href="navi_drone.py">navi_drone.py <span class="muted">CadQuery source</span></a>
+    </div>
+    <p class="fine reveal" style="margin-top:10px">Millimetres · +X forward · Z up · origin at the frame centre, top of the bottom plate. Nominal component geometry and proposed layout; physical assembly and dimensional verification pending.</p>
+  </div>
+</section>
+
+<!-- ================= 03 HARDWARE ================= -->
+<section class="section" id="hardware" data-tour="Hardware">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">03 — Hardware</span>
+      <h2>Off the shelf, <em>by choice.</em></h2>
+      <p class="lead">A budget-conscious, open-source ArduPilot flight stack on an F450 airframe. The test for every component: if ArduPilot cannot be flashed onto it, or it cannot be commanded over MAVLink, it cannot be NAVI.</p>
+    </div>
+
+    <div class="table-wrap reveal">
+      <table class="data" id="bom">
+        <thead><tr><th>Subsystem</th><th>Component specification</th><th>Role &amp; technical rationale</th><th class="num">Estimated cost</th><th><span class="sr-only">Model</span></th></tr></thead>
+        <tbody id="bom-body"></tbody>
+        <tfoot><tr><td colspan="3">Flight hardware above, at the low and high end of each range</td><td class="num" id="bom-total"></td><td></td></tr></tfoot>
+      </table>
+    </div>
+    <p class="fine reveal" style="margin-top:10px">Prices are planning estimates from Indian hobby stores (Robu, Robocraze, Amazon and similar). Only the airframe kit price has been confirmed against a live listing; every price must be rechecked before ordering.</p>
+
+    <div class="budget">
+      <div class="card reveal">
+        <span class="label">Budget against the pool</span>
+        <div class="budget-number">Rs 25,000</div>
+        <p class="fine" style="margin:0">Five members × Rs 5,000. Hold back Rs 1,500–2,000 as a crash reserve until the aircraft has flown properly.</p>
+        <div class="budget-chart" id="budget-chart"></div>
+        <div class="legend"><span><i style="background:rgba(237,193,138,.5);border:1px solid #b7976b"></i>Estimated range</span><span><i style="background:var(--gold)"></i>At mid prices</span><span><i style="border-left:2px dashed var(--mint);width:2px;border-radius:0"></i>Rs 25,000 pool</span></div>
+      </div>
+      <div class="card reveal">
+        <span class="label">Buy in stages</span>
+        <ul class="stage-list" id="stage-list" style="margin-top:8px"></ul>
+      </div>
+    </div>
+
+    <div class="sub-head reveal"><h3>The parts, as sold</h3><p>Vendor reference images of the planned components. They are not photographs of the team’s hardware, and mismatches are flagged.</p></div>
+    <div class="refs reveal">
+      <figure class="ref"><img src="assets/img/ref-frame.webp" alt="F450 frame kit vendor image" width="640" height="642" loading="lazy"><figcaption><b>F450 kit</b><span>Frame, 4 motors, 4 separate ESCs, props · Rs 4,059</span></figcaption></figure>
+      <figure class="ref"><img src="assets/img/ref-flightcontroller.webp" alt="SpeedyBee F405 V3 flight controller stack vendor image" width="640" height="608" loading="lazy"><figcaption><b>F405 V3 flight controller</b><span>Buy the FC only</span><em>4-in-1 ESC shown in photo: reference only</em></figcaption></figure>
+      <figure class="ref"><img src="assets/img/ref-gps.webp" alt="NEO-M8N GPS with compass vendor image" width="640" height="603" loading="lazy"><figcaption><b>NEO-M8N GPS + compass</b><span>Mounted on the mast</span></figcaption></figure>
+      <figure class="ref"><img src="assets/img/ref-battery.webp" alt="3S 3300 mAh LiPo battery vendor image" width="640" height="635" loading="lazy"><figcaption><b>3S 3300 mAh LiPo</b><span>Planned pack</span><em>Final pack must use XT60</em></figcaption></figure>
+      <figure class="ref"><img src="assets/img/ref-b6ac.webp" alt="iMAX B6AC balance charger vendor image" width="640" height="584" loading="lazy"><figcaption><b>iMAX B6AC charger</b><span>Ground support · Rs 1,200–2,500</span></figcaption></figure>
+      <figure class="ref"><img src="assets/img/ref-esp32.webp" alt="ESP32 DevKit vendor image" width="640" height="567" loading="lazy"><figcaption><b>ESP32 DevKit</b><span>Optional Wi-Fi bridge · ground-robot controller</span></figcaption></figure>
+    </div>
+
+    <div class="sub-head reveal"><h3>Key hardware decisions</h3><p>Each choice trades capability for cost, weight or openness — and each is defensible in a review.</p></div>
+    <div class="grid g4" id="decisions"></div>
+
+    <details class="disclose reveal">
+      <summary><span>How the hardware plan changed <span class="label">· 10 options evaluated</span></span></summary>
+      <div class="table-wrap"><table class="data"><thead><tr><th>Option considered</th><th>Verdict</th><th>Reason</th></tr></thead><tbody id="alt-body"></tbody></table></div>
+    </details>
+    <details class="disclose reveal">
+      <summary><span>Buying rules <span class="label">· what to avoid</span></span></summary>
+      <div class="table-wrap"><table class="data"><thead><tr><th>Rule</th><th>Why</th></tr></thead><tbody>
+        <tr><td>Flight controller must appear on firmware.ardupilot.org under its exact board name</td><td>Otherwise there is no supported firmware</td></tr>
+        <tr><td>Buy the FC alone, not an FC + 4-in-1 ESC stack</td><td>The F450 kit already includes four ESCs</td></tr>
+        <tr><td>Never buy KK2.1 or APM 2.8 boards, even in a bundle</td><td>KK2 has no GPS navigation; APM 2.8 is no longer supported by current ArduPilot</td></tr>
+        <tr><td>GPS must include a compass</td><td>ArduPilot needs heading for position hold and navigation</td></tr>
+        <tr><td>Receiver must output iBUS, SBUS or PPM</td><td>F405 boards do not read plain multi-wire PWM receivers</td></tr>
+        <tr><td>Use 433 MHz (or 865–867 MHz) SiK radios, not 915 MHz</td><td>915 MHz is not a licence-free band in India</td></tr>
+        <tr><td>Skip anything sold as for kids, selfies, gestures or 3D flips</td><td>These are closed toy drones</td></tr>
+        <tr><td>Check the motor KV and kit contents against the photos</td><td>Listings often contradict themselves</td></tr>
+      </tbody></table></div>
+    </details>
+  </div>
+</section>
+
+<!-- ================= 04 TELEMETRY ================= -->
+<section class="section" id="telemetry" data-tour="Telemetry">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">04 — Telemetry</span>
+      <h2>The ground station, <em>live.</em></h2>
+      <p class="lead">A synthetic HUD driven by the pacing controller and the safety state machine. Pick a destination, start the mission, then inject faults and watch the aircraft respond. Values are simulated: no flight has been performed yet.</p>
+    </div>
+
+    <div class="console reveal" id="console">
+      <div class="console-bar">
+        <span class="title"><i class="status-dot"></i>NAVI GROUND STATION <span class="sim-badge">SIMULATION</span></span>
+        <label class="sr-only" for="sim-dest">Destination</label>
+        <select id="sim-dest"></select>
+        <button class="btn primary sm" id="sim-run">▶ Start mission</button>
+        <div class="seg" role="group" aria-label="Simulation speed">
+          <button data-speed="1" aria-pressed="false">×1</button><button data-speed="4" aria-pressed="true">×4</button><button data-speed="10" aria-pressed="false">×10</button>
+        </div>
+        <button class="btn sm" id="sim-reset">Reset</button>
+      </div>
+      <div class="console-body">
+        <div class="console-main">
+          <div class="chips-row"><span class="label">Mode</span><div class="chips" id="mode-chips"></div><span class="arm-badge" id="arm-badge">DISARMED</span></div>
+          <div class="chips-row"><span class="label">Safety</span><div class="chips" id="safety-chips"></div></div>
+          <div class="route-strip"><svg id="route-svg" viewBox="0 0 900 200" role="img" aria-label="Route progress: launch pad, visitor, aircraft and destination pad along the route"></svg></div>
+          <div class="gauges">
+            <div class="gauge" id="g-alt"><span class="label"><span>Altitude AGL</span><span>m</span></span><div class="val">0.0<small>m</small></div><div class="sub">target 15 m</div><svg viewBox="0 0 120 34"></svg></div>
+            <div class="gauge" id="g-spd"><span class="label"><span>Ground speed</span><span>m/s</span></span><div class="val">0.00<small>m/s</small></div><div class="sub">visitor 0.00</div><svg viewBox="0 0 120 34"></svg></div>
+            <div class="gauge" id="g-bat"><span class="label"><span>Battery 3S</span><span>V</span></span><div class="val">12.6<small>V</small></div><div class="sub">100% · 0 mAh</div><div class="bar"><i style="width:100%"></i><span class="mark" style="left:25%"></span></div></div>
+            <div class="gauge" id="g-cur"><span class="label"><span>Current draw</span><span>A</span></span><div class="val">0.0<small>A</small></div><div class="sub">0 W</div><svg viewBox="0 0 120 34"></svg></div>
+            <div class="gauge" id="g-gps"><span class="label"><span>GPS</span><span>M8N</span></span><div class="val">12<small>sats</small></div><div class="sub">HDOP 0.9 · 3D fix</div><div class="sats"></div></div>
+            <div class="gauge" id="g-link"><span class="label"><span>Links</span><span>433 / 2.4</span></span><div class="val">98<small>%</small></div><div class="sub">SiK ok · RC ok</div><div class="bar"><i style="width:98%"></i></div></div>
+          </div>
+        </div>
+        <div class="console-side">
+          <div class="visitor-card">
+            <span class="label" style="display:flex;justify-content:space-between;align-items:center">Visitor tracking <span class="lock" id="v-lock">LOCKED</span></span>
+            <div class="sep">
+              <svg class="vec" id="v-vec" viewBox="-32 -32 64 64" aria-hidden="true"></svg>
+              <div><div class="big" id="v-gap">—<small>m</small></div><div class="fine">aircraft lead along route</div></div>
+            </div>
+            <dl class="kv">
+              <dt>Visitor speed (filtered)</dt><dd id="v-speed">—</dd>
+              <dt>Phone fix accuracy</dt><dd id="v-acc">—</dd>
+              <dt>Last sample</dt><dd id="v-age">—</dd>
+              <dt>Samples rejected</dt><dd id="v-rej">0</dd>
+              <dt>Route progress</dt><dd id="v-prog">—</dd>
+              <dt>ETA at visitor pace</dt><dd id="v-eta">—</dd>
+            </dl>
+          </div>
+          <div>
+            <span class="label">Fault injection</span>
+            <div class="faults" id="faults" style="margin-top:8px"></div>
+          </div>
+          <div>
+            <span class="label">Event log</span>
+            <div class="log" id="sim-log" role="log" aria-live="polite" style="margin-top:8px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="console-foot"><span>PACING · lead 15 m · hold &gt; 22 m · resume &lt; 17 m · stale 30 s</span><span>MAVLINK · HEARTBEAT 1 Hz · GLOBAL_POSITION_INT 4 Hz · SYS_STATUS 1 Hz · GPS_RAW_INT 2 Hz</span><span>SIMULATED VALUES · NO FLIGHT DATA EXISTS YET</span></div>
+    </div>
+    <p class="fine reveal" style="margin-top:12px">The battery model assumes ≈14 A hover on a 3300 mAh pack and the 25% reserve threshold; GPS and phone errors use the planning estimates (2.5–5 m aircraft, 7–13 m phone). Threshold values are symbolic and will be set from measured handset error.</p>
+  </div>
+</section>
+
+<!-- ================= 05 CAMPUS ================= -->
+<section class="section" id="campus" data-tour="Campus">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">05 — Campus</span>
+      <h2>Six pads. Thirty-six destinations. <em>One leg each.</em></h2>
+      <p class="lead">Routes come from surveyed path data in the VIT Chennai Wayfinder dataset; the boundary comes from OpenStreetMap. A greedy set cover places six launch pads so that every destination is a single leg of at most 350 m.</p>
+    </div>
+
+    <div class="stats reveal">
+      <div><b>260</b><span>Navigable nodes (of 278)</span></div>
+      <div><b>303</b><span>Path segments · surveyed network</span></div>
+      <div><b>8.24<small>km</small></b><span>Surveyed pathways (278 nodes)</span></div>
+      <div><b>42.2<small>ha</small></b><span>Campus extent · OSM way 336095563</span></div>
+      <div><b>36</b><span>Destinations · 1 connected component</span></div>
+      <div><b>6</b><span>Launch pads · greedy set cover</span></div>
+      <div><b>316<small>m</small></b><span>Longest single leg · VIT-SEDAXIS</span></div>
+      <div><b>40<small>m</small></b><span>Outward geofence buffer</span></div>
+    </div>
+
+    <div class="pipeline reveal" aria-label="Routing pipeline">
+      <div class="pipe-step"><b>01 · SELECT</b><strong>Gate kiosk or phone</strong><span>The visitor picks one of 36 destinations; nothing to install.</span></div>
+      <div class="pipe-step"><b>02 · LAUNCH</b><strong>Nearest launch pad</strong><span>The pad whose path distance to the destination’s nearest entrance is shortest.</span></div>
+      <div class="pipe-step"><b>03 · ROUTE</b><strong>Dijkstra path ≤ 350 m</strong><span>Over the adjacency graph; road edges carry a cost multiplier so footpaths win.</span></div>
+      <div class="pipe-step"><b>04 · LAND</b><strong>Destination pad</strong><span>A clear 5 m × 5 m zone sized for standard-GPS landing scatter.</span></div>
+    </div>
+
+    <div class="campus-grid">
+      <div class="plot reveal">
+        <svg id="campus-map" viewBox="0 0 760 600" role="img" aria-label="Map of the VIT Chennai flight graph: campus boundary, the 40 metre breach band, path network, destination entrances, six launch pads and the selected route"></svg>
+        <div class="plot-cap"><span id="map-cap">LOADING CAMPUS GRAPH…</span><span>LOCAL METRES · NORTH UP</span></div>
+        <div class="map-legend">
+          <span><i style="border-top:2px dashed #f08a8a"></i>OSM boundary</span>
+          <span><i style="background:rgba(240,138,138,.25);height:8px"></i>±40 m breach band</span>
+          <span><i style="background:#3a535d"></i>Flight graph</span>
+          <span><i class="dot" style="border:1.6px solid #e8f0ed"></i>Entrance</span>
+          <span><i class="sq"></i>Launch pad</span>
+          <span><i class="dot" style="background:#edc18a;border:0"></i>Node &lt; 25 m from edge</span>
+        </div>
+      </div>
+      <div class="card explorer reveal">
+        <span class="label">Route planner · Dijkstra in your browser</span>
+        <label class="sr-only" for="dest-select">Destination</label>
+        <select id="dest-select"></select>
+        <div class="seg" role="group" aria-label="Route origin" style="margin-top:8px;width:100%">
+          <button data-origin="pad" aria-pressed="true" style="flex:1">From nearest pad</button><button data-origin="gate" aria-pressed="false" style="flex:1">From main gate</button>
+        </div>
+        <div class="route-out" id="route-out"></div>
+      </div>
+    </div>
+
+    <div class="card chart-card reveal" style="position:relative">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px 24px;align-items:end">
+        <div><span class="label">Why pads matter</span><h3 style="margin-top:8px" id="chart-title">From the gate, only 12 of 36 destinations fit in one leg.</h3></div>
+        <div class="legend"><span><i style="background:var(--c-gate)"></i>From main gate</span><span><i style="background:var(--c-pad)"></i>From nearest pad</span><span><i style="border-left:2px dashed var(--gold);width:2px;border-radius:0"></i>350 m leg limit</span></div>
+      </div>
+      <div id="dest-chart" style="margin-top:12px"></div>
+      <div class="chart-tip" id="chart-tip" hidden></div>
+      <p class="fine" style="margin:8px 0 0">Walking distance along the flight graph (Haversine shortest path), computed live from the campus graph — it reproduces Appendix A of the project summary. 0 m means the destination shares a graph node with the pad, not a landing-precision claim. Click a row to route it on the map.</p>
+    </div>
+
+    <div class="calc">
+      <div class="card reveal">
+        <span class="label">The 350 m leg rule — try it</span>
+        <p class="fine" style="margin:8px 0 0">The leg limit falls out of four inputs. Change them to see what a shorter measured endurance would break.</p>
+        <div class="control"><label for="c-usable">Usable flight window (after reserve) <output id="o-usable" for="c-usable"></output></label><input id="c-usable" type="range" min="5" max="12" step="0.1" value="8.4"></div>
+        <div class="control"><label for="c-speed">Design walking speed <output id="o-speed" for="c-speed"></output></label><input id="c-speed" type="range" min="0.6" max="1.4" step="0.05" value="0.8"></div>
+        <div class="control"><label for="c-hes">Hesitation allowance <output id="o-hes" for="c-hes"></output></label><input id="c-hes" type="range" min="0" max="40" step="1" value="15"></div>
+        <div class="formula" id="c-formula"></div>
+        <p class="fine" style="margin:10px 0 0">The 25% battery reserve sits outside the usable window. An F450 with a 3S 3300 mAh pack is <em>estimated</em> at 10–13 min of hover; a timed hover to failsafe in Phase 2 replaces the estimate.</p>
+      </div>
+      <div class="card reveal">
+        <span class="label">Maximum guided leg</span>
+        <div class="readout" id="c-out">350<small>m</small></div>
+        <div id="c-cover"></div>
+        <div class="table-wrap" style="margin-top:14px">
+          <table class="data" id="c-table"><thead><tr><th>Route</th><th class="num">0.8 m/s</th><th class="num">1.0 m/s</th><th class="num">1.3 m/s</th><th>Verdict</th></tr></thead><tbody></tbody></table>
+        </div>
+        <p class="fine" style="margin:10px 0 0">Usable flight time needed = walking time × (1 + stop allowance). The summary’s endurance table additionally divides by 0.8 to hold the reserve back (10.5 min for 350 m at 0.8 m/s).</p>
+      </div>
+    </div>
+
+    <div class="shot-pair">
+      <figure class="shot reveal">
+        <img src="assets/img/campus-live-map.webp" alt="Screenshot of the NAVI live map in simulation: satellite imagery of VIT Chennai with the route graph nodes, numbered launch pads and the dashed OSM campus boundary, and a route panel for South Pad to Gazebo, 157 m" width="1414" height="1057" loading="lazy">
+        <figcaption><span>NAVI LIVE MAP (SIMULATION) · SOUTH PAD → GAZEBO</span><span>Imagery © Esri · Boundary © OpenStreetMap contributors, ODbL · Leaflet</span></figcaption>
+      </figure>
+      <div class="campus-notes">
+        <div class="note reveal"><b>Geofence findings.</b> 37 of the 278 surveyed nodes fall outside the hand-traced OSM polygon: 17 are truly off campus, and 26 are real perimeter paths 2–40 m outside it. So a breach is declared only beyond 40 m, and nodes close to the edge (gold on the map) are flagged so pacing holds further from it.</div>
+        <div class="note gold reveal"><b>Pad tiers.</b> Surveyed, marked pads with a person carrying spare packs (adopted); staffed swap boxes (optional upgrade, about Rs 2,000–5,000); autonomous charging docks (future work). Each pad needs a clear area of about 5 m × 5 m for GPS landing scatter.</div>
+        <div class="note reveal"><b>Greedy set cover.</b> The fewest graph nodes such that every destination is within one 350 m leg of a pad. All six pads lie 33–190 m inside the boundary.</div>
+      </div>
+    </div>
+    <div class="table-wrap reveal" style="margin-top:16px"><table class="data"><thead><tr><th>Launch pad</th><th class="num">Node</th><th class="num">Latitude °N</th><th class="num">Longitude °E</th><th class="num">Destinations served</th></tr></thead><tbody id="pad-body"></tbody></table></div>
+  </div>
+</section>
+
+<!-- ================= 06 SOFTWARE ================= -->
+<section class="section" id="software" data-tour="Software">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">06 — Software</span>
+      <h2>The intelligence stays <em>on the ground.</em></h2>
+      <p class="lead">ArduPilot already handles stabilisation, waypoints and failsafes. Route planning and pacing need only a few position updates a second — which MAVLink over telemetry provides — so they run on the ground station. All software runs today in simulation, independent of the airframe.</p>
+    </div>
+
+    <div class="arch reveal" aria-label="System architecture">
+      <div class="arch-col">
+        <span class="label">Visitor</span><h4>Phone or kiosk</h4>
+        <div class="arch-box"><b>DESTINATION</b><span>Pick one of 36 at the gate kiosk or in a phone browser</span></div>
+        <div class="arch-box"><b>POSITION</b><span>HTML5 Geolocation over HTTPS — zero install</span></div>
+      </div>
+      <div class="arch-link"><span class="arrow">→</span>HTTPS<br>dest + position</div>
+      <div class="arch-col">
+        <span class="label">Ground station · laptop or Raspberry Pi</span><h4>Kiosk</h4>
+        <div class="arch-box"><b>ROUTE PLANNER</b><span>Dijkstra · leg splitter (350 m)</span></div>
+        <div class="arch-box"><b>MISSION VALIDATOR</b><span>Geofence (OSM + 40 m) · surveyed-waypoint whitelist</span></div>
+        <div class="arch-box pending"><b>PACING CONTROLLER</b><span>Visitor ↔ aircraft progress; lead, hold, resume</span></div>
+        <div class="arch-box sim"><b>LIVE MAP &amp; STATUS</b><span>Mission upload, telemetry, fleet</span></div>
+      </div>
+      <div class="arch-link"><span class="arrow">⇄</span>MAVLink<br>SiK 433 MHz<br>or ESP32 Wi-Fi</div>
+      <div class="arch-col">
+        <span class="label">Aircraft · F450</span><h4>F405 + ArduPilot</h4>
+        <div class="arch-box"><b>FLIGHT</b><span>Stabilisation · EKF · AUTO / GUIDED</span></div>
+        <div class="arch-box"><b>SENSORS</b><span>M8N GPS + compass on the mast</span></div>
+        <div class="arch-box"><b>ONBOARD FAILSAFES</b><span>Battery · RC · GCS · EKF · fence</span></div>
+      </div>
+      <div class="arch-rc"><b>SAFETY OPERATOR · FS-i6X</b><span>Independent 2.4 GHz RC link: take over, hold, land</span><span class="mono" style="font-size:11px">iBUS → iA6B → F405</span></div>
+    </div>
+
+    <div class="sub-head reveal"><h3>Four web applications, delivered</h3><p>Overview, live map, route planner, mission control, fleet, simulation, safety, destinations and statistics — with dark and light themes. Telemetry is simulated today.</p></div>
+    <div class="grid g4">
+      <div class="card deliverable reveal"><code>navi_app.html</code><h4>Master dashboard</h4><p>Live map tracking, route planning, simulation controls and fleet management.</p></div>
+      <div class="card deliverable reveal"><code>navi_kiosk.html</code><h4>Visitor kiosk</h4><p>Touchscreen destination selection with the route and estimated walking time.</p></div>
+      <div class="card deliverable reveal"><code>navi_control.html</code><h4>Ground-station console</h4><p>Telemetry streaming and mission-script verification for the operator.</p></div>
+      <div class="card deliverable reveal"><code>navi_campus.html</code><h4>Campus visualisation</h4><p>The path graph, launch pads and geofence boundary on satellite imagery.</p></div>
+    </div>
+    <div class="shot-pair" style="margin-top:16px">
+      <figure class="shot reveal"><img src="assets/img/app-destinations.webp" alt="Screenshot of the NAVI application destinations page listing destinations with category, entrance node, nearest pad, distance and walking time" width="1600" height="897" loading="lazy"><figcaption><span>NAVI_APP · DESTINATIONS</span><span>Status: NO FIX · SIMULATION</span></figcaption></figure>
+      <figure class="shot reveal"><img src="assets/img/app-route-panel.webp" alt="Route panel: destination Gazebo, launch pad South Pad, distance 157 m, walking time 3 m 16 s, 9 nodes, 1 leg, estimated battery 29%" width="510" height="610" loading="lazy"><figcaption><span>ROUTE PANEL</span><span>Gazebo · 157 m · 1 leg</span></figcaption></figure>
+    </div>
+
+    <div class="sub-head reveal"><h3>Algorithms</h3><p>Small, inspectable methods — each one testable without an aircraft.</p></div>
+    <div class="grid g3">
+      <div class="algo reveal"><b>Distance</b><p>Haversine computed at runtime, so editing a coordinate updates every distance, time and battery estimate.</p></div>
+      <div class="algo reveal"><b>Routing</b><p>Dijkstra over the adjacency list, from the chosen pad to the destination’s nearest entrance, with a cost multiplier on roadways to prefer pedestrian footpaths.</p></div>
+      <div class="algo reveal"><b>Leg segmentation</b><p>Greedy accumulator: add segments until 350 m would be exceeded, then break at the last node.</p></div>
+      <div class="algo reveal"><b>Geofence</b><p>Ray-casting point-in-polygon plus point-to-segment distance; a breach only beyond 40 m outside the boundary.</p></div>
+      <div class="algo reveal"><b>Simulation</b><p>The visitor walks at 0.8 m/s, the drone paces to hold its lead, and six injected faults drive the safety state machine.</p></div>
+      <div class="algo reveal"><b>Telemetry interface</b><p>A provider abstraction: simulated today, with MAVLink, WebSocket or MQTT pluggable without UI changes. Missions export as JSON with provenance and OSM attribution.</p></div>
+    </div>
+
+    <div class="sub-head reveal"><h3>The human pacing controller</h3><p>Proposed logic, to be validated in ArduPilot SITL before any live trial. Progress is measured along the route, not as straight-line distance.</p></div>
+    <div class="pacing">
+      <div class="card hyst reveal">
+        <span class="label">Hysteresis on route progress · gap = s<sub>aircraft</sub> − s<sub>visitor</sub></span>
+        <svg id="hyst-svg" viewBox="0 0 560 250" role="img" aria-label="Hysteresis diagram: the aircraft leads below the hold threshold, holds above it, and resumes only once the gap falls below a lower resume threshold" style="margin-top:12px"></svg>
+        <ul class="scope-list" style="margin-top:6px">
+          <li><span><b>Zero-install positioning.</b> Visitor coordinates from the mobile browser’s Geolocation API over HTTPS.</span></li>
+          <li><span><b>Signal conditioning.</b> Reject samples implying impossible walking speed; snap to the nearest graph edge; require several consistent samples.</span></li>
+          <li><span><b>Lead maintenance.</b> Adjust forward airspeed over MAVLink to keep ≈15 m; loiter when the visitor stops.</span></li>
+        </ul>
+      </div>
+      <div class="reveal">
+<pre class="code" aria-label="Pacing controller pseudocode"><span class="ln">1</span><span class="k">on</span> visitor_sample(p):
+<span class="ln">2</span>  <span class="k">if</span> age(p) &gt; T_STALE: <span class="k">return</span> state(<span class="s">HOLD</span>)
+<span class="ln">3</span>  <span class="k">if</span> implausible_jump(p): <span class="k">return</span>   <span class="c"># drop</span>
+<span class="ln">4</span>  s_v = project_onto_route(p)
+<span class="ln">5</span>  gap = s_aircraft - s_v
+<span class="ln">6</span>  <span class="k">if</span> gap &gt; L_HOLD:     state(<span class="s">HOLD</span>)
+<span class="ln">7</span>  <span class="k">elif</span> gap &lt; L_RESUME: state(<span class="s">LEAD</span>)
+<span class="ln">8</span>
+<span class="ln">9</span><span class="k">on</span> tick():
+<span class="ln">10</span>  <span class="k">if</span> held_stale &gt; T_STALE: state(<span class="s">RTL</span>)
+<span class="ln">11</span>  <span class="c"># precedence: failsafe &gt; fence &gt; stale &gt; pace</span></pre>
+        <p class="fine" style="margin:10px 0 0">Proposed pacing logic as pseudocode — not the live controller. Phone GPS error is typically 7–13 m, larger than the original lead, which is why the lead was widened to ≈15 m.</p>
+        <div class="card" style="margin-top:16px">
+          <span class="label">Pad-to-pad straight-line distance (Haversine, m)</span>
+          <div style="overflow-x:auto;margin-top:8px"><table class="matrix" id="pad-matrix"></table></div>
+          <p class="fine" style="margin:8px 0 0">Computed in your browser from the six pad coordinates. Path legs are always at least this long.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-head reveal"><h3>Still to build for the real aircraft</h3><p>Stated plainly, so a reviewer knows where the evidence ends.</p></div>
+    <ul class="todo reveal">
+      <li>MAVLink link from the ground station to ArduPilot (pymavlink or MAVSDK), replacing simulated telemetry.</li>
+      <li>The pacing controller running against real positions, tested first in ArduPilot SITL.</li>
+      <li>Export of the 40 m-buffered campus fence and the pads into ArduPilot’s own fence and rally points.</li>
+      <li>Phone position intake over HTTPS, with filtering, snapping to the graph and hysteresis.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 07 SAFETY ================= -->
+<section class="section" id="safety" data-tour="Safety">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">07 — Safety</span>
+      <h2>Hold first. <em>Then return.</em></h2>
+      <p class="lead">A deterministic safety state machine moves between SAFE, WARNING, HOLD, RETURN_TO_LAUNCH and EMERGENCY. Select a trigger to trace its path. Every response is designed; firmware configuration and field verification are pending.</p>
+    </div>
+
+    <div class="fsm reveal" id="fsm"><div class="fsm-states" id="fsm-states"></div><div class="fsm-caption" id="fsm-caption">Select a trigger condition below to see the states it moves through.</div></div>
+
+    <div class="table-wrap reveal" style="margin-top:16px">
+      <table class="data"><thead><tr><th>Trigger condition</th><th>Primary automated response</th><th>Secondary failsafe</th><th>Severity</th><th>Verification (pending)</th></tr></thead><tbody id="safety-body"></tbody></table>
+    </div>
+
+    <div class="sub-head reveal"><h3>Principles</h3><p>Rules that hold regardless of which fault occurs.</p></div>
+    <ol class="principles reveal" id="principles"></ol>
+
+    <div class="sub-head reveal"><h3>Operational modes</h3><p>Suggested framing for reviews: <b>autonomous navigation, supervised operation.</b> The software autonomy is complete either way; unattended operation is a safety and permission stage, not a technical limitation.</p></div>
+    <div class="grid g2">
+      <div class="card mode-card reveal"><span class="label">Phase 1 · now</span><h4>Supervised autonomy</h4><p>The aircraft flies the route itself. A team member walks with the visitor holding the FlySky RC transmitter, keeping the link short (20–30 m) and the aircraft in sight — ready for instant manual takeover. They do nothing unless something goes wrong.</p></div>
+      <div class="card mode-card p2 reveal"><span class="label">Phase 2 · later</span><h4>Unattended kiosk mode</h4><p>Fully remote, kiosk-dispatched operation over 433 MHz SiK telemetry. Batteries are swapped at the pads by a person. Enabled only after extensive supervised flight validation and formal written campus authorisation.</p></div>
+    </div>
+    <div class="card reveal" style="margin-top:16px">
+      <span class="label">Why the RC radio is worth Rs 3,500–4,500</span>
+      <ul class="reasons" style="margin-top:12px">
+        <li><b>First flights and tuning.</b>Instant stick response while ArduPilot is tuned; a gamepad over telemetry lags by a few hundred milliseconds.</li>
+        <li><b>A second, independent link.</b>If telemetry, the Wi-Fi bridge or the laptop fails, the radio still works.</li>
+        <li><b>Instant takeover.</b>One switch changes from the NAVI route to position hold or full manual.</li>
+        <li><b>Safe arming and a kill switch.</b>Instead of clicking on a laptop near spinning propellers.</li>
+        <li><b>ArduPilot expects one.</b>By default it will not arm without an RC link.</li>
+        <li><b>Insurance at the kiosk.</b>After testing, it stays at the kiosk for unattended operation.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 08 ROADMAP ================= -->
+<section class="section" id="roadmap" data-tour="Roadmap">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">08 — Roadmap</span>
+      <h2>Assume nothing works <em>until proven.</em></h2>
+      <p class="lead">Six phases, each closed by a definition-of-done gate. Check every connection, test with propellers removed, calibrate from scratch, and get a steady manual hover before any autonomy. Let the pacing code crash in SITL, where it costs nothing.</p>
+    </div>
+    <div class="phases reveal" id="phases"></div>
+    <div class="phase-progress reveal" aria-hidden="true"><i></i></div>
+    <p class="fine reveal" style="margin-top:8px">Status as of 12 October 2026: Phase 0 under way — order the F450 kit, shortlist the flight controller, collect contributions, request written campus permission and install ArduPilot SITL.</p>
+
+    <div class="sub-head reveal"><h3>Measurements outstanding</h3><p>Every estimate on this site names the measurement that replaces it.</p></div>
+    <div class="table-wrap reveal"><table class="data"><thead><tr><th>#</th><th>Measurement</th><th>Why it matters</th></tr></thead><tbody id="meas-body"></tbody></table></div>
+    <details class="disclose reveal">
+      <summary><span>Risk register <span class="label">· 12 risks and mitigations</span></span></summary>
+      <div class="table-wrap"><table class="data"><thead><tr><th>Risk</th><th>Description</th><th>Mitigation</th></tr></thead><tbody id="risk-body"></tbody></table></div>
+    </details>
+
+    <div class="sub-head reveal"><h3>Backup ground platform</h3><p>If flight tests meet bad weather, battery limits or airframe repairs, there is still something real to demonstrate.</p></div>
+    <div class="robot">
+      <div class="card reveal">
+        <span class="label">4WD ground robot</span>
+        <h3 style="margin:10px 0 10px">Same graph. Same planner. Same pacing.</h3>
+        <p>A metal 4WD chassis with yellow TT DC gear motors, an L298N driver and an ESP32 microcontroller runs the identical Dijkstra pathfinding, campus graph data and pacing controller as the quadcopter — an active demonstration platform for academic evaluations.</p>
+        <ul>
+          <li>Replace the ESP8266 with an ESP32: the 8266 lacks the pins and serial ports for GPS, compass, ultrasonics and the driver.</li>
+          <li>TT motors may manage only 0.6–0.7 m/s, below adult walking pace — test, and lead-and-wait if needed.</li>
+          <li>Small wheels cannot climb kerbs; mark those graph edges robot-unsuitable.</li>
+        </ul>
+      </div>
+      <div class="card reveal">
+        <span class="label">Add-ons · Rs 1,900–2,700</span>
+        <div class="table-wrap" style="margin-top:12px"><table class="data"><tbody>
+          <tr><td>ESP32 DevKit</td><td class="num">Rs 350–500</td></tr>
+          <tr><td>GPS NEO-6M</td><td class="num">Rs 300–450</td></tr>
+          <tr><td>Compass QMC5883L</td><td class="num">Rs 150–250</td></tr>
+          <tr><td>Ultrasonic HC-SR04 × 3</td><td class="num">Rs 200–250</td></tr>
+          <tr><td>Wheel speed sensors × 2</td><td class="num">Rs 150–250</td></tr>
+          <tr><td>Buck converter, cell, buzzer, LEDs, LCD, wiring</td><td class="num">Rs 750–1,050</td></tr>
+        </tbody></table></div>
+        <p class="fine" style="margin:10px 0 0">Cheapest variant: an old Android phone as GPS, compass and screen (about Rs 1,200–1,700 in total), accepting phone-level accuracy.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 09 TEAM ================= -->
+<section class="section" id="team" data-tour="Team">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">09 — Team</span>
+      <h2>Three schools, <em>one aircraft.</em></h2>
+      <p class="lead">An interdisciplinary initiative across Mechanical (SMEC), Electronics (SENSE) and Computer Science (SCOPE) at VIT Chennai — self-funded by its five members.</p>
+    </div>
+    <div class="team" id="team-grid"></div>
+    <div class="inst reveal">
+      <div><span class="label">Institution</span><b>Vellore Institute of Technology, Chennai</b></div>
+      <div><span class="label">Project type</span><b>Interdisciplinary</b></div>
+      <div><span class="label">Budget</span><b>Rs 25,000 · 5 × Rs 5,000</b></div>
+      <div><span class="label">Milestone</span><b>20% review · design &amp; simulation</b></div>
+    </div>
+
+    <div class="sub-head reveal"><h3>Questions reviewers ask</h3><p>The pattern for every answer: name the uncertainty, state the measurement that resolves it, and the safe default until then.</p></div>
+    <div class="qa reveal" id="qa"></div>
+  </div>
+</section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="#top"><span class="brandmark">N</span><span>NAVI<small>NAVIGATION ASSISTANT FOR VISITOR INTERACTION</small></span></a>
+        <p>An autonomous micro aerial vehicle that leads campus visitors to their destination. Vellore Institute of Technology, Chennai.</p>
+        <p><button class="btn sm" type="button" data-open-sources>Design basis &amp; sources ↗</button></p>
+      </div>
+      <div><span class="label">Explore</span>
+        <ul class="foot-list"><li><a href="#airframe">Exploded CAD atelier</a></li><li><a href="#telemetry">Pacing &amp; fault simulation</a></li><li><a href="#campus">Campus pads &amp; leg limit</a></li><li><a href="#safety">Safety state machine</a></li><li><a href="app/">Mobile visitor app (demo)</a></li></ul>
+      </div>
+      <div><span class="label">Attribution</span>
+        <p style="margin-top:10px">Campus boundary: OpenStreetMap way 336095563, © OpenStreetMap contributors, ODbL 1.0. Path graph and building entrances derived from the VIT Chennai Way Finder dataset. Map imagery © Esri. 3D rendering: three.js (MIT).</p>
+      </div>
+    </div>
+    <div class="disclaimer"><span>DESIGN &amp; SIMULATION ONLY · NO FLIGHT RESULTS CLAIMED</span><span>LEAD, SPEED AND PAD SIZE ARE DESIGN TARGETS · ENDURANCE, BUDGET AND GNSS ERROR ARE ESTIMATES</span><span>© 2026 NAVI TEAM</span></div>
+  </div>
+</footer>
+
+<dialog id="sources" aria-labelledby="sources-title">
+  <div class="modal-head"><span id="sources-title">NAVI / DESIGN BASIS &amp; SOURCES</span><button class="btn sm" id="close-sources" aria-label="Close dialog">✕</button></div>
+  <div class="modal-body">
+    <h3>What this site is</h3>
+    <p>A showcase of NAVI at its 20% review milestone. The campus graph, routing, pad coverage and geofence results are computed from real data. The hardware is a planned, self-funded build that has not yet flown; telemetry on this page is simulated, and endurance, budget and positioning figures are planning estimates.</p>
+    <h3>Data</h3>
+    <ul>
+      <li><b>Path graph:</b> VIT Chennai wayfinder routing data — 278 waypoints with coordinates, connection lists, 36 building entrances and one-way road constraints. Two nodes with blank coordinates were rebuilt from the file’s local metre grid; 17 off-campus nodes were removed, leaving 260.</li>
+      <li><b>Campus boundary:</b> OpenStreetMap way 336095563 (amenity=university), a closed 36-vertex polygon, © OpenStreetMap contributors, ODbL 1.0.</li>
+      <li><b>CAD:</b> navi_f450.glb and navi_f450_exploded.glb — nominal component geometry, +X forward, Z up, millimetres.</li>
+    </ul>
+    <h3>Project documents in this repository</h3>
+    <ul class="doc-list">
+      <li><a href="NAVI_20_Percent_Review_Animated_3-2.pptx">NAVI_20_Percent_Review_Animated_3-2.pptx</a> — 20% review deck (18 slides + backup)</li>
+      <li><a href="NAVI_ReviewPPT.pptx">NAVI_ReviewPPT.pptx</a> — review presentation</li>
+      <li><a href="NAVI_Speaker_Notes_15min.pdf">NAVI_Speaker_Notes_15min.pdf</a> — 15-minute speaker notes</li>
+      <li><a href="NAVI_Comprehensive_Report.pdf">NAVI_Comprehensive_Report.pdf</a> — campus data and software remain valid; its hardware, budget and RTK sections are superseded by the self-funded build</li>
+      <li><a href="navi_drone.py">navi_drone.py</a> — parametric CAD source; <a href="navi_f450.step">STEP</a>, <a href="navi_f450.stl">STL</a>, <a href="navi_f450.glb">GLB</a></li>
+      <li><span class="mono">assets/data/campus.json</span> — flight graph, boundary, destinations and pads, extracted from the team’s navi_app</li>
+    </ul>
+    <h3>Literature</h3>
+    <ul class="ref-list" id="ref-list"></ul>
+  </div>
+</dialog>
+
+<div class="tour-controls" id="tour" hidden>
+  <span id="tour-count">01 / 10</span>
+  <button class="btn sm" id="tour-prev">← Previous</button>
+  <button class="btn primary sm" id="tour-next">Next →</button>
+  <button class="btn sm" id="tour-exit">Exit</button>
+</div>
+
+<div id="announce" class="sr-only" aria-live="polite"></div>
+<script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

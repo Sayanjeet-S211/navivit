@@ -1,0 +1,19 @@
+/* Operator console: a plain, dense layout over the app's tokens. */
+body.op{overflow:auto;height:auto;min-height:100%}
+body.op .topbar{position:sticky;top:0;height:var(--top)}
+.op-main{max-width:980px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-left)) 40px;display:grid;gap:14px}
+.op-input{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line-strong);background:var(--raised);padding:0 14px;font-size:16px;min-width:0}
+.op-pads{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:10px}
+.op-pad{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.op-pad select{min-height:44px;border-radius:10px;border:1px solid var(--line-strong);background:var(--raised);padding:0 8px}
+.op-sessions{display:grid;gap:12px}
+.op-session{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r);padding:14px 16px}
+.op-session h3{font-size:17px}
+.op-session .kv{grid-template-columns:auto 1fr auto 1fr;margin-top:8px}
+.op-session .kv dd{text-align:left}
+.op-session .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.op-session .btns .btn{min-height:44px;font-size:14px;padding:0 12px}
+.op-session .btn.on{border-color:var(--caution);color:var(--caution)}
+.op-state{font:600 12px var(--mono);letter-spacing:.06em;padding:3px 8px;border-radius:8px;border:1px solid var(--line-strong)}
+.op-state.await{color:var(--caution);border-color:var(--caution);background:var(--caution-soft)}
+@media (max-width:600px){.op-session .kv{grid-template-columns:auto 1fr}}
