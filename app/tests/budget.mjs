@@ -6,7 +6,7 @@ import zlib from 'node:zlib';
 const ROOT = new URL('..', import.meta.url).pathname;
 const files = [
   'index.html', 'manifest.webmanifest', 'sw.js', 'icons/icon.svg', 'icons/icon-192.png',
-  'css/app.css', 'vendor/leaflet/leaflet.css', 'vendor/leaflet/leaflet.js', 'data/campus.v1.json',
+  'css/app.css', 'vendor/leaflet/leaflet.css', 'vendor/leaflet/leaflet.js', 'data/campus.v1.json', 'data/pads.v1.json',
   ...fs.readdirSync(ROOT + 'fonts').filter(f => f.endsWith('.woff2')).map(f => 'fonts/' + f),
   ...['js', 'js/providers', 'js/sim'].flatMap(d => fs.readdirSync(ROOT + d).filter(f => f.endsWith('.js') && f !== 'operator.js').map(f => `${d}/${f}`))
 ];

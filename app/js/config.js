@@ -17,6 +17,17 @@ export const CONFIG = Object.freeze({
   padArrivalM: 20,             // visitor counts as at the meeting pad within this radius
   planningAltitudeM: 15,       // placeholder cruise altitude pending obstruction survey
 
+  // Guided-coverage journeys over the expanded pad network (95% edit)
+  minGuidedPercent: 95,        // a guided-service offer needs at least this share of walking guided (unrounded)
+  maxDetourRatio: 1.3,         // the walk via pads may be at most this × the shortest walking route...
+  maxDetourExtraM: 60,         // ...or the shortest route + this, whichever is larger
+  atDestinationM: 10,          // shortest walk at or below this: "You are already at the destination"
+  arrivalM: 10,                // visitor within this of a leg's end point has reached it
+  takeoffLandingS: 90,         // per-leg launch, climb, descent and landing overhead (estimate)
+  cruiseMps: 3,                // repositioning/return flight speed without the visitor (conservative)
+  enduranceBudgetS: 660,       // usable flight time per battery after reserve (provisional, 3S 3300 mAh ≈ 14 A)
+  handoffSwapS: 120,           // staffed battery swap and pre-flight at a handoff pad (estimate)
+
   // Location conditioning (master prompt §6)
   maxPedestrianSpeedMps: 3.0,  // implied speed above this is treated as a multipath jump
   poorAccuracyM: 35,           // warn the visitor above this reported accuracy

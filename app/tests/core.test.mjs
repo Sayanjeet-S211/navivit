@@ -13,7 +13,8 @@ import { pointAlong } from '../js/campus.js';
 
 const RAW = JSON.parse(fs.readFileSync(new URL('../data/campus.v1.json', import.meta.url), 'utf8'));
 const clone = () => JSON.parse(JSON.stringify(RAW));
-const campus = new Campus(RAW, CONFIG);
+const PADS = JSON.parse(fs.readFileSync(new URL('../data/pads.v1.json', import.meta.url), 'utf8'));
+const campus = new Campus(RAW, CONFIG, PADS);
 const seeded = (seed = 7) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 
 /* ---------------------------------------------------------------- 1. dataset */
@@ -74,37 +75,41 @@ test('route checks cover the whole route, not just the end points', () => {
   assert.ok(r.breach && r.maxOutsideM > 150);
 });
 
-test('plans Gate → Gazebo via the South Pad within the provisional 350 m leg', () => {
+test('plans Gate → Gazebo as drone-guided legs from the Gate Pad, within the 350 m leg', () => {
   const g = campus.pad('gate');
-  const p = campus.plan({ origin: { kind: 'pad', ll: g.ll, nodeId: g.node }, destinationId: 'gazebo', padStatus: { south: 'ready', gate: 'ready', central: 'ready', east: 'ready', 'north-west': 'ready', 'e-block': 'ready' } });
-  assert.equal(p.pad.id, 'south');
-  assert.ok(p.guided.lengthM <= 350 && p.guided.withinLimit);
+  const p = campus.plan({ origin: { kind: 'pad', ll: g.ll, nodeId: g.node }, destinationId: 'gazebo', defaultPadStatus: 'ready' });
   assert.equal(p.availability, 'available');
-  assert.ok(p.transfer.needed, 'the visitor walks to the meeting pad first');
+  assert.equal(p.startPad.id, 'gate', 'guidance starts at the gate, not after a long walk');
+  assert.ok(p.legs.every(l => l.lengthM <= CONFIG.legLimitM));
+  assert.ok(p.coverage.percent >= 95);
   assert.equal(p.inspection, 'pending', 'no footpath classification in the data');
 });
 
-test('pad readiness: unknown stays unknown, unavailable pads are skipped', () => {
+test('pad readiness: unknown stays unknown, unavailable pads are avoided', () => {
   const g = campus.pad('gate'), origin = { kind: 'pad', ll: g.ll, nodeId: g.node };
-  assert.equal(campus.plan({ origin, destinationId: 'gazebo', padStatus: {} }).availability, 'unknown');
-  const p = campus.plan({ origin, destinationId: 'gazebo', padStatus: { south: 'unavailable', east: 'ready', central: 'ready' } });
-  assert.notEqual(p.pad.id, 'south');
-  assert.ok(p.notes.some(n => /South Pad is unavailable/.test(n)));
+  assert.equal(campus.plan({ origin, destinationId: 'gazebo' }).availability, 'unknown');
+  const ready = campus.plan({ origin, destinationId: 'vit-sedaxis', defaultPadStatus: 'ready' });
+  const avoid = ready.pads.find(x => x.id !== 'gate' && x.id !== ready.landingPadId) || ready.pads.at(-1);
+  const p = campus.plan({ origin, destinationId: 'vit-sedaxis', defaultPadStatus: 'ready', padStatus: { [avoid.id]: 'unavailable' } });
+  assert.ok(!p.pads?.some(x => x.id === avoid.id) || p.availability === 'unavailable');
 });
 
-test('a destination at the pad needs no guided leg', () => {
+test('a trip that is already at the destination is not counted as 100% guided', () => {
   const g = campus.pad('gate');
-  const p = campus.plan({ origin: { kind: 'pad', ll: g.ll, nodeId: g.node }, destinationId: 'main-gate', padStatus: { gate: 'ready' } });
-  assert.equal(p.availability, 'not_needed');
+  const p = campus.plan({ origin: { kind: 'pad', ll: g.ll, nodeId: g.node }, destinationId: 'main-gate', defaultPadStatus: 'ready' });
+  assert.equal(p.availability, 'at_destination');
+  assert.equal(p.coverage.applicable, false);
+  assert.equal(p.coverage.percent, null);
   assert.equal(p.guideNeeded, false);
 });
 
 test('over-limit legs never become a feasible mission', () => {
-  const tight = new Campus(RAW, { ...CONFIG, legLimitM: 60 });
+  const tight = new Campus(RAW, { ...CONFIG, legLimitM: 60 }, PADS);
   const g = tight.pad('gate');
-  const p = tight.plan({ origin: { kind: 'pad', ll: g.ll, nodeId: g.node }, destinationId: 'vit-sedaxis', padStatus: Object.fromEntries(tight.pads.map(x => [x.id, 'ready'])) });
+  const p = tight.plan({ origin: { kind: 'pad', ll: g.ll, nodeId: g.node }, destinationId: 'vit-sedaxis', defaultPadStatus: 'ready' });
   assert.equal(p.availability, 'unavailable');
-  assert.equal(p.reasons[0].code, 'leg_over_limit');
+  assert.match(p.unavailableText, /95% drone-guided navigation is currently unavailable/);
+  assert.ok(!p.legs || p.legs.every(l => l.lengthM <= 60));
 });
 
 test('forbidden edges are excluded; penalties only change preference', () => {
@@ -147,7 +152,7 @@ test('velocity filter: noise is not motion, jumps are rejected, a consistent new
 });
 
 test('route matching flags off-route and keeps progress continuous', () => {
-  const g = campus.pad('south'), p = campus.plan({ origin: { kind: 'pad', ll: g.ll, nodeId: g.node }, destinationId: 'gazebo', padStatus: { south: 'ready' } });
+  const g = campus.pad('south'), p0 = campus.plan({ origin: { kind: 'pad', ll: g.ll, nodeId: g.node }, destinationId: 'gazebo', defaultPadStatus: 'ready' }), p = { guided: { coords: p0.legs[0].coords } };
   const f = new SampleFilter(frame, CONFIG); f.setRoute(p.guided.coords);
   let t = 0, last = -1;
   for (let s = 0; s <= 60; s += 1.2) { const r = f.process(smp(s * 10 + 1, pointAlong(frame, p.guided.coords, s).ll, (t += 1000))); assert.ok(r.accepted); assert.ok(r.matched.progressM >= last - 1); last = r.matched.progressM; }
@@ -178,12 +183,16 @@ function rig({ dest = 'gazebo', from = 'south', autoApprove = true } = {}) {
   const pad = campus.pad(from);
   const plan = gs.previewRoute(s, { origin: { kind: 'pad', ll: pad.ll, nodeId: pad.node }, destinationId: dest });
   const w = new SimulatedWalker({ frame, now, random: seeded(3) });
-  w.setPath([...(plan.transfer?.coords?.length > 1 ? plan.transfer.coords : [plan.pad.ll]), ...plan.guided.coords.slice(1)]);
-  const T = plan.transfer?.needed ? plan.transfer.lengthM : 0;
-  const step = (sec, { walk = true } = {}) => {
+  if (plan.legs) {
+    const parts = [plan.transfer?.needed ? plan.transfer.coords : [plan.startPad.ll], ...plan.legs.map(l => l.coords), plan.finalApproach?.coords || []], path = [];
+    for (const part of parts) for (const c of part) if (!path.length || path.at(-1)[0] !== c[0] || path.at(-1)[1] !== c[1]) path.push(c);
+    w.setPath(path);
+  }
+  const step = (sec, { walk = true, ahead = 0 } = {}) => {
     for (let i = 0; i < sec * 20; i++) {
       t += 50; const m = s.mission;
-      w.setLimit(!m || ['MEET', 'PREFLIGHT', 'TAKEOFF'].includes(m.phase) ? T : T + m.sa - 3);
+      const lim = m ? m.simVisitorLimitM() : 0;
+      w.setLimit((lim == null ? w.s : lim) + ahead);
       if (walk && (s.request?.state === 'MEET_AT_PAD' || m)) { w.step(0.05); const x = w.sample(); if (x) gs.ingestSample(s, x); }
       gs.tick(0.05);
     }
@@ -305,5 +314,5 @@ test('a normal trip arrives, then landing is confirmed at the pad', () => {
   const codes = r.events.filter(e => e.type === 'alert').map(e => e.code);
   assert.ok(codes.indexOf('destination_reached') < codes.indexOf('landed'));
   const landed = r.events.find(e => e.type === 'alert' && e.code === 'landed');
-  assert.equal(landed.confirmed, true); assert.equal(landed.padId, 'south');
+  assert.equal(landed.confirmed, true); assert.equal(landed.padId, r.plan.landingPadId);
 });

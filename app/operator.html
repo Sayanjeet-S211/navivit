@@ -32,8 +32,9 @@
     <section class="card">
       <div class="between"><h2>Dispatch</h2><div class="toggle-row" style="border:0;min-height:0"><span>Auto-approve</span><button class="switch" role="switch" id="auto" aria-checked="false" aria-label="Auto-approve requests"></button></div></div>
       <p class="small muted">Every guided trip needs your approval unless auto-approve is on.</p>
+      <div class="between" style="margin-top:10px"><span id="aircraft">Aircraft available: —</span><span class="row"><button class="btn" data-aircraft="-1" aria-label="One fewer aircraft">−</button><button class="btn" data-aircraft="1" aria-label="One more aircraft">+</button></span></div>
     </section>
-    <section class="card"><h2>Launch pads</h2><div id="pads" class="op-pads"></div></section>
+    <section class="card"><h2>Launch pads</h2><p class="small muted">All sites are proposed: placement pending inspection. Handoff pads need a crew for the battery swap.</p><div id="pads" class="op-pads"></div></section>
     <section><h2 style="margin:18px 0 8px">Visitor sessions</h2><div id="sessions" class="op-sessions"><p class="muted">No sessions yet.</p></div></section>
     <p class="small muted" id="op-status" style="margin-top:16px"></p>
   </div>

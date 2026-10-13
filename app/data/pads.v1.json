@@ -1,0 +1,919 @@
+{
+ "schema": "navi-pads/1",
+ "version": "2026-10-13.1",
+ "generated": "tools/gen-pads.mjs",
+ "note": "Proposed pads only. Placement pending inspection; no pad is approved for flight.",
+ "pads": [
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "gate",
+   "name": "Gate Pad",
+   "kind": "source",
+   "node": 111,
+   "serves": [
+    "main-gate"
+   ],
+   "meet": "Beside the main gate kiosk",
+   "placement": "Source pad node from the project summary (greedy set cover, 350 m)",
+   "provenance": "NAVI Project Summary §10 pad table",
+   "shared": false,
+   "lat": 12.8406492,
+   "lon": 80.1531595
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "central",
+   "name": "Central Pad",
+   "kind": "source",
+   "node": 50,
+   "serves": [],
+   "meet": "Central campus, by the pad markings",
+   "placement": "Source pad node from the project summary (greedy set cover, 350 m)",
+   "provenance": "NAVI Project Summary §10 pad table",
+   "shared": false,
+   "lat": 12.8430861,
+   "lon": 80.1544099
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "east",
+   "name": "East Pad",
+   "kind": "source",
+   "node": 40,
+   "serves": [],
+   "meet": "East side, by the pad markings",
+   "placement": "Source pad node from the project summary (greedy set cover, 350 m)",
+   "provenance": "NAVI Project Summary §10 pad table",
+   "shared": false,
+   "lat": 12.8417882,
+   "lon": 80.155996
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "north-west",
+   "name": "North-West Pad",
+   "kind": "source",
+   "node": 7,
+   "serves": [],
+   "meet": "North-west side, by the pad markings",
+   "placement": "Source pad node from the project summary (greedy set cover, 350 m)",
+   "provenance": "NAVI Project Summary §10 pad table",
+   "shared": false,
+   "lat": 12.8436541,
+   "lon": 80.1528137
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "south",
+   "name": "South Pad",
+   "kind": "source",
+   "node": 27,
+   "serves": [],
+   "meet": "South side, by the pad markings",
+   "placement": "Source pad node from the project summary (greedy set cover, 350 m)",
+   "provenance": "NAVI Project Summary §10 pad table",
+   "shared": false,
+   "lat": 12.8404752,
+   "lon": 80.1546584
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "e-block",
+   "name": "E Block Pad",
+   "kind": "source",
+   "node": 68,
+   "serves": [
+    "e-block-hostel"
+   ],
+   "meet": "Beside E Block Hostel",
+   "placement": "Source pad node from the project summary (greedy set cover, 350 m)",
+   "provenance": "NAVI Project Summary §10 pad table",
+   "shared": false,
+   "lat": 12.8447352,
+   "lon": 80.1608183
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-a-block-hostel",
+   "name": "A Block Hostel pad",
+   "kind": "destination",
+   "node": 236,
+   "serves": [
+    "a-block-hostel"
+   ],
+   "meet": "Outdoor area at the A Block Hostel entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8444137,
+   "lon": 80.1524796
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-academic-block-1",
+   "name": "Academic Block 1 pad",
+   "kind": "destination",
+   "node": 241,
+   "serves": [
+    "academic-block-1"
+   ],
+   "meet": "Outdoor area at the Academic Block 1 entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8435816,
+   "lon": 80.1534207
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-academic-block-2",
+   "name": "Academic Block 2 pad",
+   "kind": "destination",
+   "node": 231,
+   "serves": [
+    "academic-block-2"
+   ],
+   "meet": "Outdoor area at the Academic Block 2 entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8429546,
+   "lon": 80.1564078
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-academic-block-3",
+   "name": "Academic Block 3 pad",
+   "kind": "destination",
+   "node": 240,
+   "serves": [
+    "academic-block-3"
+   ],
+   "meet": "Outdoor area at the Academic Block 3 entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8435184,
+   "lon": 80.1546257
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-academic-block-4",
+   "name": "Academic Block 4 pad",
+   "kind": "destination",
+   "node": 238,
+   "serves": [
+    "academic-block-4"
+   ],
+   "meet": "Outdoor area at the Academic Block 4 entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8433127,
+   "lon": 80.1559951
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-academic-block-5",
+   "name": "Academic Block 5 pad",
+   "kind": "destination",
+   "node": 156,
+   "serves": [
+    "academic-block-5"
+   ],
+   "meet": "Outdoor area at the Academic Block 5 entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8409902,
+   "lon": 80.1561951
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-admin-block",
+   "name": "Admin Block pad",
+   "kind": "destination",
+   "node": 41,
+   "serves": [
+    "admin-block"
+   ],
+   "meet": "Outdoor area at the Admin Block entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8408332,
+   "lon": 80.1537898
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-alpha-block",
+   "name": "Alpha Block pad",
+   "kind": "destination",
+   "node": 272,
+   "serves": [
+    "alpha-block"
+   ],
+   "meet": "Outdoor area at the Alpha Block entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8414934,
+   "lon": 80.1566256
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-b-block-hostel",
+   "name": "B Block Hostel pad",
+   "kind": "destination",
+   "node": 155,
+   "serves": [
+    "b-block-hostel"
+   ],
+   "meet": "Outdoor area at the B Block Hostel entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8419374,
+   "lon": 80.1569088
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-c-block-hostel",
+   "name": "C Block Hostel pad",
+   "kind": "destination",
+   "node": 232,
+   "serves": [
+    "c-block-hostel"
+   ],
+   "meet": "Outdoor area at the C Block Hostel entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8430622,
+   "lon": 80.1574571
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-d1-d2-block-hostel",
+   "name": "D1 / D2 Block Hostel pad",
+   "kind": "destination",
+   "node": 189,
+   "serves": [
+    "d1-block-hostel",
+    "d2-block-hostel"
+   ],
+   "meet": "Outdoor area at the D1 Block Hostel entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": true,
+   "lat": 12.8437805,
+   "lon": 80.1518498
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-guest-house",
+   "name": "Guest House pad",
+   "kind": "destination",
+   "node": 273,
+   "serves": [
+    "guest-house"
+   ],
+   "meet": "Outdoor area at the Guest House entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8424957,
+   "lon": 80.1525751
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-omega-block",
+   "name": "Omega Block pad",
+   "kind": "destination",
+   "node": 275,
+   "serves": [
+    "omega-block"
+   ],
+   "meet": "Outdoor area at the Omega Block entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8392805,
+   "lon": 80.1543384
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-sigma-block",
+   "name": "Sigma Block pad",
+   "kind": "destination",
+   "node": 255,
+   "serves": [
+    "sigma-block"
+   ],
+   "meet": "Outdoor area at the Sigma Block entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8446755,
+   "lon": 80.1536701
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-vit-sedaxis",
+   "name": "VIT-SEDAXIS pad",
+   "kind": "destination",
+   "node": 253,
+   "serves": [
+    "vit-sedaxis"
+   ],
+   "meet": "Outdoor area at the VIT-SEDAXIS entrance",
+   "placement": "Destination entrance node (outdoor entrance area, not the building or roof)",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8436615,
+   "lon": 80.1577384
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-2nd-gate",
+   "name": "2nd Gate pad",
+   "kind": "gate",
+   "node": 33,
+   "serves": [
+    "2nd-gate"
+   ],
+   "meet": "At the 2nd Gate, outside the vehicle lane",
+   "placement": "Gate entrance node",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8387746,
+   "lon": 80.1544518
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-main-gate-2",
+   "name": "Main Gate (entrance 2) pad",
+   "kind": "gate",
+   "node": 188,
+   "serves": [
+    "main-gate"
+   ],
+   "meet": "At the Main Gate entrance 2, outside the vehicle lane",
+   "placement": "Gate entrance node",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "shared": false,
+   "lat": 12.8406082,
+   "lon": 80.153196
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-staff-parking-1",
+   "name": "Staff Parking 1 pad",
+   "kind": "destination",
+   "node": 257,
+   "serves": [
+    "staff-parking-1"
+   ],
+   "meet": "Outdoor area at the Staff Parking 1 entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8452759,
+   "lon": 80.1522029
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-volleyball-court",
+   "name": "Volleyball Court pad",
+   "kind": "destination",
+   "node": 264,
+   "serves": [
+    "volleyball-court"
+   ],
+   "meet": "Outdoor area at the Volleyball Court entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8421659,
+   "lon": 80.1534401
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-gazebo",
+   "name": "Gazebo pad",
+   "kind": "destination",
+   "node": 270,
+   "serves": [
+    "gazebo"
+   ],
+   "meet": "Outdoor area at the Gazebo entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8414053,
+   "lon": 80.1546851
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-site-office",
+   "name": "Site Office pad",
+   "kind": "destination",
+   "node": 148,
+   "serves": [
+    "site-office"
+   ],
+   "meet": "Outdoor area at the Site Office entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8408746,
+   "lon": 80.1553165
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-north-square",
+   "name": "North Square pad",
+   "kind": "destination",
+   "node": 136,
+   "serves": [
+    "north-square"
+   ],
+   "meet": "Outdoor area at the North Square entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8440767,
+   "lon": 80.153914
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-mahatma-gandhi-auditorium",
+   "name": "Mahatma Gandhi Auditorium pad",
+   "kind": "destination",
+   "node": 199,
+   "serves": [
+    "mahatma-gandhi-auditorium"
+   ],
+   "meet": "Outdoor area at the Mahatma Gandhi Auditorium entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8395527,
+   "lon": 80.1549195
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-cricket-ground",
+   "name": "Cricket Ground pad",
+   "kind": "destination",
+   "node": 268,
+   "serves": [
+    "cricket-ground"
+   ],
+   "meet": "Outdoor area at the Cricket Ground entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8422521,
+   "lon": 80.1550371
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-ground",
+   "name": "Ground pad",
+   "kind": "destination",
+   "node": 266,
+   "serves": [
+    "ground"
+   ],
+   "meet": "Outdoor area at the Ground entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8424137,
+   "lon": 80.1537627
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-student-s-parking-e2",
+   "name": "Student's Parking pad",
+   "kind": "destination",
+   "node": 251,
+   "serves": [
+    "student-s-parking"
+   ],
+   "meet": "Outdoor area at the Student's Parking entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8418124,
+   "lon": 80.1531449
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-student-s-parking-2",
+   "name": "Student's Parking 2 pad",
+   "kind": "destination",
+   "node": 107,
+   "serves": [
+    "student-s-parking-2"
+   ],
+   "meet": "Outdoor area at the Student's Parking 2 entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.839988,
+   "lon": 80.1549407
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-north-square-e2",
+   "name": "North Square pad",
+   "kind": "destination",
+   "node": 146,
+   "serves": [
+    "north-square"
+   ],
+   "meet": "Outdoor area at the North Square entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8439964,
+   "lon": 80.1543173
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-staff-parking-2",
+   "name": "Staff Parking 2 pad",
+   "kind": "destination",
+   "node": 259,
+   "serves": [
+    "staff-parking-2"
+   ],
+   "meet": "Outdoor area at the Staff Parking 2 entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8448933,
+   "lon": 80.1530764
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-football-ground",
+   "name": "Football Ground pad",
+   "kind": "destination",
+   "node": 261,
+   "serves": [
+    "football-ground"
+   ],
+   "meet": "Outdoor area at the Football Ground entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8425682,
+   "lon": 80.1529173
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-tennis-court",
+   "name": "Tennis Court pad",
+   "kind": "destination",
+   "node": 260,
+   "serves": [
+    "tennis-court"
+   ],
+   "meet": "Outdoor area at the Tennis Court entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8430822,
+   "lon": 80.1531385
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-student-s-parking-2-e2",
+   "name": "Student's Parking 2 / Transport Office pad",
+   "kind": "destination",
+   "node": 277,
+   "serves": [
+    "student-s-parking-2",
+    "transport-office"
+   ],
+   "meet": "Outdoor area at the Student's Parking 2 entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8409057,
+   "lon": 80.1551476
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-basketball-court",
+   "name": "Basketball Court pad",
+   "kind": "destination",
+   "node": 262,
+   "serves": [
+    "basketball-court"
+   ],
+   "meet": "Outdoor area at the Basketball Court entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8425081,
+   "lon": 80.1533385
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-student-s-parking",
+   "name": "Student's Parking pad",
+   "kind": "destination",
+   "node": 250,
+   "serves": [
+    "student-s-parking"
+   ],
+   "meet": "Outdoor area at the Student's Parking entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8411487,
+   "lon": 80.1528339
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-gymkhaana",
+   "name": "GymKhaana pad",
+   "kind": "destination",
+   "node": 274,
+   "serves": [
+    "gymkhaana"
+   ],
+   "meet": "Outdoor area at the GymKhaana entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8436845,
+   "lon": 80.1526133
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "p-swimming-pool",
+   "name": "Swimming Pool pad",
+   "kind": "destination",
+   "node": 192,
+   "serves": [
+    "swimming-pool"
+   ],
+   "meet": "Outdoor area at the Swimming Pool entrance",
+   "placement": "Destination entrance node, added by tools/gen-pads.mjs where trips starting or ending here needed it",
+   "provenance": "Entrance node from the VIT Chennai Way Finder destination data",
+   "lat": 12.8409139,
+   "lon": 80.1563651
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "j-254",
+   "name": "Junction 254 pad",
+   "kind": "junction",
+   "node": 254,
+   "serves": [],
+   "meet": "Beside the path junction at graph node 254, clear of the walkway",
+   "placement": "Path junction node chosen by tools/gen-pads.mjs to connect guided legs (a surveyed graph node, not an invented split point)",
+   "provenance": "Generated from the campus graph",
+   "lat": 12.8444901,
+   "lon": 80.1537044
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "j-164",
+   "name": "Junction 164 pad",
+   "kind": "junction",
+   "node": 164,
+   "serves": [],
+   "meet": "Beside the path junction at graph node 164, clear of the walkway",
+   "placement": "Path junction node chosen by tools/gen-pads.mjs to connect guided legs (a surveyed graph node, not an invented split point)",
+   "provenance": "Generated from the campus graph",
+   "lat": 12.8403006,
+   "lon": 80.1529281
+  },
+  {
+   "approval": "proposed",
+   "inspection": "pending",
+   "support": {
+    "handoff": true,
+    "handoffNote": "Staffed battery swap proposed; crew not yet assigned"
+   },
+   "id": "j-211",
+   "name": "Path 211 pad",
+   "kind": "junction",
+   "node": 211,
+   "serves": [],
+   "meet": "Beside the path at graph node 211, clear of the walkway",
+   "placement": "Existing path node chosen by tools/gen-pads.mjs to connect guided legs (a surveyed graph node, not an invented split point)",
+   "provenance": "Generated from the campus graph",
+   "lat": 12.8452441,
+   "lon": 80.1587411
+  }
+ ]
+}

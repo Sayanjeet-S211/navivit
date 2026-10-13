@@ -4,12 +4,12 @@
 //   (guide requests, actions, samples) goes straight to the network: control requests are never
 //   cached, queued or replayed later.
 // - Map tiles from other origins are not intercepted and are never bulk-cached.
-const VERSION = 'navi-shell-0.1.0';
+const VERSION = 'navi-shell-0.2.0';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
-  'js/app.js', 'js/campus.js', 'js/config.js', 'js/filter.js', 'js/geo.js', 'js/map.js', 'js/sensors.js', 'js/ui.js',
+  'js/app.js', 'js/campus.js', 'js/journey.js', 'js/config.js', 'js/filter.js', 'js/geo.js', 'js/map.js', 'js/sensors.js', 'js/ui.js',
   'js/providers/demo.js', 'js/providers/emitter.js', 'js/providers/live.js', 'js/sim/groundstation.js', 'js/sim/walker.js',
-  'data/campus.v1.json', 'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css',
+  'data/campus.v1.json', 'data/pads.v1.json', 'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css',
   'fonts/inter-latin-400-normal.woff2', 'fonts/inter-latin-500-normal.woff2', 'fonts/inter-latin-600-normal.woff2',
   'fonts/space-grotesk-latin-500-normal.woff2', 'fonts/space-grotesk-latin-700-normal.woff2',
   'fonts/jetbrains-mono-latin-500-normal.woff2', 'fonts/jetbrains-mono-latin-600-normal.woff2',

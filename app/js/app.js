@@ -1,6 +1,7 @@
 // NAVI visitor guide: controller and screens.
 import { Campus } from './campus.js';
 import { CONFIG, fmtDuration, fmtShort, fmtDist } from './config.js';
+import { fmtPercent, coverageOf, PAD_APPROVAL_TEXT } from './journey.js';
 import { haversine, bearing, cardinal } from './geo.js';
 import { SampleFilter, Freshness } from './filter.js';
 import { MapView } from './map.js';
@@ -9,7 +10,7 @@ import { DemoProvider } from './providers/demo.js';
 import { LiveProvider, DisconnectedProvider } from './providers/live.js';
 import { $, $$, esc, icon, announce, settings, haptic, unlockAudio, chime, uid, ago } from './ui.js';
 
-export const APP_VERSION = '0.1.0';
+export const APP_VERSION = '0.2.0';
 const appEl = $('#app'), sheet = $('#sheet'), overlay = $('#overlay'), hudEl = $('#hud'), bannersEl = $('#banners');
 let campus, map, provider, wake, heading, device = null, offSim = null, clientFilter = null, refreshTimer = null;
 const fresh = new Freshness();
@@ -26,16 +27,16 @@ const S = {
   visitor: null, mission: null, aircraft: null, source: 'visitor', link: 'up',
   commands: new Map(), events: [], arrival: { reached: false, landed: null },
   showRaw: false, spark: [], wake: 'off', qrPad: null, layers: settings.get('layers', { network: false, nodes: false, buffer: true }),
-  feedback: null, banners: [], dismissed: new Set(), staleRequests: new Set(), closedSessions: new Set()
+  feedback: null, banners: [], dismissed: new Set(), staleRequests: new Set(), closedSessions: new Set(), offTrack: []
 };
 
 /* ======================================================================= boot */
 async function boot() {
   applyTheme();
   try {
-    const r = await fetch('data/campus.v1.json', { cache: 'no-cache' });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    campus = new Campus(await r.json(), CONFIG);
+    const [r, rp] = await Promise.all(['data/campus.v1.json', 'data/pads.v1.json'].map(u => fetch(u, { cache: 'no-cache' })));
+    if (!r.ok || !rp.ok) throw new Error('HTTP ' + (r.ok ? rp.status : r.status));
+    campus = new Campus(await r.json(), CONFIG, await rp.json());
   } catch (e) {
     sheet.classList.add('full');
     sheet.innerHTML = `<div class="sheet-body error-screen"><h1>Campus data could not be loaded</h1><p class="lead">${esc(e.message)}</p><button class="btn primary" id="retry">Try again</button></div>`;
@@ -83,6 +84,7 @@ async function setMode(mode, { initial = false } = {}) {
     provider = new DisconnectedProvider(e.message);
   }
   provider.on('event', onEvent);
+  refreshPads();
   provider.on('link', l => { S.link = l.state; if (l.state === 'up') fresh.mark('ground', provider.now()); render(); });
   updatePill();
   if (!initial) {
@@ -90,6 +92,12 @@ async function setMode(mode, { initial = false } = {}) {
     announce(S.notice.text, 'assertive');
     go('welcome');
   }
+}
+
+/** Pad readiness for the map's pad layer, from whichever ground station is connected. */
+async function refreshPads() {
+  try { const list = await provider.pads(); if (list) map.setPadStates(list); else map.setPadStates(campus.pads.map(p => ({ id: p.id, status: 'unknown', handoff: undefined }))); }
+  catch { map.setPadStates(campus.pads.map(p => ({ id: p.id, status: 'unknown' }))); }
 }
 
 function updatePill() {
@@ -113,10 +121,12 @@ function onEvent(ev) {
       announce(dispatchText(ev.state).title, TERMINAL.has(ev.state) ? 'assertive' : 'polite');
       break;
     case 'mission': {
-      const prev = S.mission?.status;
+      const prev = S.mission;
       S.mission = ev;
-      if (ev.stage === 'guided' && clientFilter && clientFilter.route !== S.plan?.guided?.coords) clientFilter.setRoute(S.plan.guided.coords);
-      if (prev !== ev.status) { onStatusChange(prev, ev.status); }
+      const route = currentRoute(ev);
+      if (clientFilter && route && clientFilter.route !== route) clientFilter.setRoute(route);
+      if (prev?.legIndex !== ev.legIndex || prev?.status !== ev.status) drawProgress();
+      if (prev?.status !== ev.status) { onStatusChange(prev?.status, ev.status); }
       break;
     }
     case 'aircraft': S.aircraft = { ...ev, receivedAt: provider.now() }; fresh.mark('aircraft', provider.now()); break;
@@ -133,6 +143,19 @@ function onEvent(ev) {
       renderSoon();
       break;
   }
+}
+
+/** The part of the plan the visitor is on now: the walk to the first pad, a guided leg, or the final approach. */
+function currentRoute(m = S.mission) {
+  const p = S.plan; if (!p?.legs) return null;
+  if (!m || m.stage === 'transfer') return p.transfer?.needed ? p.transfer.coords : p.legs[0].coords;
+  return p.legs[Math.min(m.legIndex || 0, p.legs.length - 1)].coords;
+}
+/** Map overlay during transit: completed guided legs, the leg guided right now, unguided movement. */
+function drawProgress() {
+  const m = S.mission; if (!S.plan?.legs || !m) return map.setProgress({});
+  const ended = ['landed', 'ended'].includes(m.status), done = ended && m.outcome === 'arrived' ? S.plan.legs.length : (m.legIndex || 0) + (['handoff', 'interrupted'].includes(m.status) ? 1 : 0);
+  map.setProgress({ plan: S.plan, legIndex: m.legIndex || 0, done, active: !!m.guidanceActive, track: S.offTrack });
 }
 
 /** Apply a dispatch update only if it belongs to the current request and does not move it backwards
@@ -167,7 +190,7 @@ function onAlert(ev) {
     go(arrived ? 'arrival' : 'ended');
   }
 }
-const alertText = ev => ({ preflight: 'Pre-flight checks at the pad', takeoff: 'Takeoff', leading: 'Leading', hold: 'Holding: ' + (ev.reason || ''), resume: 'Resumed leading', dest_hold: 'Over the destination entrance', destination_reached: 'Destination reached', returning: 'Returning: ' + (ev.reason || ''), emergency_land: 'Landing in place: ' + (ev.reason || ''), landed: 'Landing confirmed', rc_takeover: 'Operator took manual control', rc_released: 'Operator handed back control' }[ev.code] || ev.code);
+const alertText = ev => ({ preflight: 'Pre-flight checks at the pad', takeoff: 'Takeoff', leading: 'Leading', hold: 'Holding: ' + (ev.reason || ''), resume: 'Resumed leading', dest_hold: 'Over the destination entrance', destination_reached: 'Destination reached', returning: 'Returning: ' + (ev.reason || ''), emergency_land: 'Landing in place: ' + (ev.reason || ''), landed: 'Landing confirmed', handoff_landing: 'Landing at the handoff pad', handoff: 'Handoff: battery swap', handoff_blocked: 'Handoff blocked: ' + (ev.reason || ''), leg_started: `Leg ${(ev.legIndex ?? 0) + 1} started`, last_leg_landing: 'Landing at the last pad', guided_section_complete: 'Guided section complete', rc_takeover: 'Operator took manual control', rc_released: 'Operator handed back control' }[ev.code] || ev.code);
 function pushEvent(text) { S.events.push({ t: provider?.now() || Date.now(), text }); if (S.events.length > 40) S.events.shift(); }
 
 /* ============================================================ routing helpers */
@@ -318,47 +341,83 @@ VIEWS.directory = {
 function planChecks(p) {
   const li = (cls, ic, text) => `<li class="${cls}">${icon(ic)}<span>${text}</span></li>`;
   const out = [];
-  if (p.guideNeeded) out.push(p.guided.withinLimit ? li('ok', 'check', `Guided leg ${fmtDist(p.guided.lengthM)} is within the provisional ${CONFIG.legLimitM} m limit`) : li('bad', 'alert', `Guided leg ${fmtDist(p.guided.lengthM)} exceeds the ${CONFIG.legLimitM} m limit`));
-  if (p.guided) out.push(p.guided.fence.breach ? li('bad', 'alert', 'Part of the route leaves the 40 m buffered boundary') : p.guided.fence.insideBoundary ? li('ok', 'check', 'Guided route stays inside the campus boundary') : li('warn', 'alert', `Guided route runs up to ${Math.round(p.guided.fence.maxOutsideM)} m outside the hand-traced boundary (within the 40 m buffer)`));
+  if (p.legs?.length) out.push(li('ok', 'check', `${p.legs.length} guided leg${p.legs.length > 1 ? 's' : ''}, each within the provisional ${CONFIG.legLimitM} m limit and one battery`));
+  if (p.legs?.length) {
+    const worst = Math.max(...p.legs.map(l => campus.routeFenceCheck(l.coords).maxOutsideM));
+    out.push(worst > CONFIG.fenceBufferM ? li('bad', 'alert', 'Part of a guided leg leaves the 40 m buffered boundary') : worst > 0 ? li('warn', 'alert', `A guided leg runs up to ${Math.round(worst)} m outside the hand-traced boundary (within the 40 m buffer)`) : li('ok', 'check', 'Guided legs stay inside the campus boundary'));
+  }
   out.push(li('warn', 'alert', 'Footpath/road classification is not in the data yet, so route inspection is pending. Follow footpaths, never the carriageway.'));
-  if (p.pad) {
-    const st = { ready: S.mode === 'demo' ? 'ready (demo)' : 'ready', busy: 'busy', unavailable: 'unavailable', unknown: 'readiness unknown' }[p.pad.status] || p.pad.status;
-    out.push(li(p.pad.status === 'ready' ? 'ok' : p.pad.status === 'unknown' ? 'info' : 'bad', p.pad.status === 'ready' ? 'check' : 'info', `${esc(p.pad.name)}: ${esc(st)}`));
+  if (p.pads?.length) {
+    const proposed = p.pads.filter(x => x.approval !== 'approved').length;
+    if (proposed) out.push(li('warn', 'info', `${proposed === p.pads.length ? 'All' : proposed} pad${proposed > 1 ? 's' : ''} on this route ${proposed > 1 ? 'are' : 'is'} proposed: placement pending inspection`));
+    const st = x => ({ ready: S.mode === 'demo' ? 'ready (simulated)' : 'ready', busy: 'busy', unavailable: 'unavailable', unknown: 'readiness unknown' }[x.status] || x.status);
+    for (const x of p.pads) out.push(li(x.status === 'ready' ? 'ok' : x.status === 'unknown' ? 'info' : 'bad', x.status === 'ready' ? 'check' : 'info', `${esc(x.name)}: ${esc(st(x))}`));
   }
   out.push(li('info', 'phone', S.sharing.status === 'active' ? 'Location sharing is active' : 'Location is not shared yet; you will be asked first'));
   return out.join('');
 }
+
+/** Itinerary in words, built from the plan's own segment classification. */
+function itinerary(p) {
+  const rover = settings.get('rover', false), steps = [];
+  const step = (cls, ic, title, sub) => `<li class="${cls}"><span class="dot ${cls}">${icon(ic)}</span><span><b>${title}</b><small>${sub}</small></span></li>`;
+  const t = p.segments?.find(x => x.role === 'transfer');
+  steps.push(t ? step('walk', 'walk', `Walk to ${esc(p.startPad.name)}`, `${fmtDist(t.lengthM)} · about ${fmtDuration(t.etaS)} · on your own (unguided)`) : step('walk', 'flag', `Meet NAVI at ${esc(p.startPad.name)}`, 'You start at the pad'));
+  p.legs.forEach((l, i) => {
+    steps.push(step('guided', rover ? 'rover' : 'drone', `Leg ${i + 1}: NAVI guides you to ${l.to ? esc(l.to.name) : `the ${esc(p.destination.name)} entrance`}`, `${fmtDist(l.lengthM)} · about ${fmtDuration(l.etaS)} · drone-guided`));
+    const h = p.handoffs?.find(x => x.id === l.to?.id && i < p.legs.length - 1);
+    if (h) steps.push(step('wait', 'clock', `Handoff at ${esc(h.name)}: wait about ${Math.round(h.waitS / 60)} min`, 'Staffed battery swap (estimate). Wait here; guidance continues after the handoff.'));
+  });
+  const f = p.finalApproach;
+  if (f) steps.push(step('walk', 'walk', `Walk the last ${fmtDist(f.lengthM)} to the entrance`, `about ${fmtDuration(f.etaS)} · on your own (unguided)`));
+  else steps.push(step('walk', 'flag', `Arrive at ${esc(p.destination.name)}`, `NAVI then lands at ${esc(campus.pad(p.landingPadId)?.name || 'its pad')}`));
+  return `<ol class="steps itin">${steps.join('')}</ol>`;
+}
+
+function coverageCard(p, label = 'Planned drone-guided coverage') {
+  const c = p.coverage;
+  if (!c?.applicable) return '';
+  const ok = c.meets;
+  return `<div class="cov ${ok ? 'ok' : 'bad'}" role="group" aria-label="${esc(label)}">
+    <div class="cov-main"><small>${esc(label)}</small><b>${fmtPercent(c.percent)}</b><span class="chip ${ok ? 'ok' : 'danger'}">${ok ? `${icon('check')} Meets ${c.thresholdPct}%` : `${icon('alert')} Below ${c.thresholdPct}%`}</span></div>
+    <div class="cov-bar" aria-hidden="true"><span class="g" style="width:${c.percent}%"></span></div>
+    <dl class="kv cov-kv"><dt><span class="sw g"></span>Drone-guided walking</dt><dd>${fmtDist(c.guidedM)}</dd><dt><span class="sw u"></span>Unguided walking</dt><dd>${fmtDist(c.unguidedM)}${c.unguidedM > 0 ? ` (${fmtPercent(c.unguidedPercent)})` : ''}</dd><dt>Total walk</dt><dd>${fmtDist(c.totalM)}</dd></dl>
+  </div>`;
+}
+const legend = () => `<p class="legend"><span><i class="ln g"></i>Drone-guided</span><span><i class="ln u"></i>Unguided walking</span><span><i class="pd"></i>Pad</span></p>`;
 
 VIEWS.preview = {
   keepScroll: true,
   html: () => {
     const p = S.plan;
     if (!p) return `<div class="grab"></div><div class="sheet-body"><div class="sheet-head">${backBtn('directory')}<h2>Planning…</h2></div>${S.planError ? `<p class="lead">${esc(S.planError)}</p>` : '<p class="lead">Working out the route.</p>'}</div>`;
-    const t = p.transfer, g = p.guided, canRequest = p.availability === 'available' && S.conn === 'connected' && S.planSource === 'ground' && navigator.onLine !== false;
-    const why = S.conn !== 'connected' ? 'Not connected to a ground station.' : S.planSource !== 'ground' ? 'Route not validated by the ground station yet.' : p.availability === 'not_needed' ? 'No guided leg is needed for this destination.' : p.availability === 'unknown' ? 'Pad readiness is unknown.' : p.reasons[0]?.text || '';
-    return `<div class="grab"></div><div class="sheet-body">
-      <div class="sheet-head">${backBtn('directory', 'Back to destinations')}<h2>${esc(p.destination.name)}</h2></div>
-      <p class="small muted" style="margin:-8px 0 12px">From ${esc(p.origin.label)} · ${esc(p.destination.category)}</p>
-      <div class="card"><div class="between"><span class="muted">Walking directly</span><b class="mono">${fmtDist(p.direct?.lengthM)}</b></div><div class="between"><span class="muted">Estimated time</span><b class="mono">${fmtDuration(p.direct?.etaS)}</b></div><p class="small muted" style="margin-top:6px">Estimate at 0.8 m/s plus a 15% allowance for pauses. Waiting and dispatch time are separate.</p></div>
-      <p class="section-label">With NAVI</p>
-      <ol class="steps">
-        ${t?.needed ? `<li><span class="dot walk">${icon('walk')}</span><span><b>Walk to ${esc(p.pad.name)}</b><small>${fmtDist(t.lengthM)} · about ${fmtDuration(t.etaS)} · on your own, unguided</small></span></li>` : p.pad ? `<li><span class="dot walk">${icon('flag')}</span><span><b>You are at ${esc(p.pad.name)}</b><small>Meet NAVI here</small></span></li>` : ''}
-        ${p.guideNeeded ? `<li><span class="dot">${icon(settings.get('rover', false) ? 'rover' : 'drone')}</span><span><b>NAVI guides you to the entrance</b><small>${fmtDist(g.lengthM)} · about ${fmtDuration(g.etaS)}</small></span></li>` : ''}
-        <li><span class="dot walk">${icon('flag')}</span><span><b>Arrive at ${esc(p.destination.name)}</b><small>${p.guideNeeded ? `NAVI then returns to land at ${esc(p.pad.name)}` : 'Walk the short distance from the pad'}</small></span></li>
-      </ol>
-      ${p.pad ? `<div class="card" style="margin-top:6px"><p class="eyebrow">Meeting point</p><p style="margin-top:4px"><b>${esc(p.pad.name)}</b> — ${esc(p.pad.meet)}. Stay outside the marked ${CONFIG.padClearanceM} m × ${CONFIG.padClearanceM} m area.</p></div>` : ''}
-      <p class="section-label">Pre-flight</p>
-      <div class="chips" style="flex-wrap:wrap">${preflightChips(p)}</div>
+    const head = `<div class="sheet-head">${backBtn('directory', 'Back to destinations')}<h2>${esc(p.destination.name)}</h2></div>
+      <p class="small muted" style="margin:-8px 0 12px">From ${esc(p.origin.label)} · ${esc(p.destination.category)}</p>`;
+    if (p.availability === 'at_destination') return `<div class="grab"></div><div class="sheet-body">${head}<div class="card"><h3>You are already at the destination</h3><p class="small muted" style="margin-top:4px">Your starting point is at the ${esc(p.destination.name)} entrance, so there is nothing to guide. Drone-guided coverage does not apply.</p></div></div>
+      <div class="sheet-foot"><button class="btn block" data-act="goto" data-to="directory">Choose another destination</button></div>`;
+    const canRequest = p.availability === 'available' && S.conn === 'connected' && S.planSource === 'ground' && navigator.onLine !== false;
+    const unavailable = p.availability === 'unavailable';
+    const why = S.conn !== 'connected' ? 'Not connected to a ground station.' : S.planSource !== 'ground' ? 'Route not validated by the ground station yet.' : p.availability === 'unknown' ? 'Pad readiness is unknown.' : '';
+    return `<div class="grab"></div><div class="sheet-body">${head}
+      ${unavailable ? `<div class="card unavailable" role="alert"><h3>${esc(p.unavailableText || '95% drone-guided navigation is currently unavailable for this route.')}</h3>
+        <ul class="checks" style="margin-top:8px">${p.reasons.map(r => `<li class="bad">${icon('alert')}<span>${esc(r.text)}</span></li>`).join('')}</ul>
+        ${p.suggestions?.length ? `<p class="section-label">What would close the gap</p>${p.suggestions.map(x => `<p class="small">${icon('pin')} ${esc(x.text)}</p>`).join('')}` : ''}</div>` : ''}
+      ${p.legs?.length ? coverageCard(p, unavailable ? 'Best plan found (does not qualify)' : 'Planned drone-guided coverage') : ''}
+      ${p.legs?.length ? `<p class="section-label">${unavailable ? 'Best plan found' : 'Your journey'}</p>${legend()}${itinerary(p)}
+        <div class="card" style="margin-top:6px"><div class="between"><span class="muted">Walking time</span><b class="mono">${fmtDuration(p.totalEtaS)}</b></div>${p.handoffs.length ? `<div class="between"><span class="muted">Waiting at handoffs</span><b class="mono">about ${fmtDuration(p.waitS)}</b></div>` : ''}<p class="small muted" style="margin-top:6px">Walking at 0.8 m/s plus a 15% allowance for pauses. Dispatch and handoff waits are estimates and are separate.</p></div>` : ''}
+      <div class="card" style="margin-top:10px"><div class="between"><span class="muted">Shortest walk without NAVI</span><b class="mono">${fmtDist(p.direct?.lengthM)} · ${fmtDuration(p.direct?.etaS)}</b></div></div>
+      ${p.startPad && !unavailable ? `<div class="card" style="margin-top:10px"><p class="eyebrow">Meeting point</p><p style="margin-top:4px"><b>${esc(p.startPad.name)}</b> — ${esc(p.startPad.meet || '')}. Stay outside the marked ${CONFIG.padClearanceM} m × ${CONFIG.padClearanceM} m area.</p><p class="small muted" style="margin-top:4px">${esc(PAD_APPROVAL_TEXT[p.startPad.approval] || '')}</p></div>` : ''}
+      ${p.legs?.length && !unavailable ? `<p class="section-label">Pre-flight</p><div class="chips" style="flex-wrap:wrap">${preflightChips(p)}</div>` : ''}
       <p class="section-label">Checks</p>
       <ul class="checks">${planChecks(p)}</ul>
       ${p.notes.filter(n => !/classification/.test(n)).map(n => `<p class="note" style="margin-top:10px">${esc(n)}</p>`).join('')}
-      <p class="small muted" style="margin-top:12px">${S.planSource === 'ground' ? `Validated by the ${S.mode === 'demo' ? 'demo ' : ''}ground station · route ${esc(p.routeId)}` : 'Offline estimate from this phone · not validated by a ground station'}</p>
+      <p class="small muted" style="margin-top:12px">${S.planSource === 'ground' ? `Validated by the ${S.mode === 'demo' ? 'demo ' : ''}ground station · route ${esc(p.routeId)}` : 'Offline estimate from this phone · not validated by a ground station'}${S.mode === 'demo' ? ' · pad and aircraft availability simulated' : ''}</p>
     </div>
     <div class="sheet-foot">
-      ${!canRequest ? `<button class="btn block" disabled>Guide unavailable</button><p class="small muted" style="margin-top:6px">${esc(why)}</p>`
+      ${unavailable ? '' : !canRequest ? `<button class="btn block" disabled>Guide unavailable</button><p class="small muted" style="margin-top:6px">${esc(why)}</p>`
         : settings.get('slide', false) ? `<button class="slide" id="slide" data-act="request" aria-label="Request Guide (slide, or press Enter)"><span class="fill"></span><span class="label">Slide to request guide</span><span class="thumb">${icon('next')}</span></button>`
         : `<button class="btn primary block lg" id="request" data-act="request-tap" ${S.requesting ? 'disabled' : ''}>${icon(settings.get('rover', false) ? 'rover' : 'drone')} Request Guide</button>`}
-      <button class="btn ghost block" style="margin-top:6px" data-act="walk-only">Walking directions only</button>
+      <button class="btn ${unavailable ? '' : 'ghost'} block" style="margin-top:6px" data-act="walk-only">Walking directions only${unavailable ? ' (not drone-guided)' : ''}</button>
     </div>`;
   },
   after: () => bindSlide()
@@ -367,7 +426,7 @@ VIEWS.preview = {
 function preflightChips(p) {
   if (S.planSource !== 'ground') return `<span class="chip">${icon('info')} Pre-flight status unknown offline</span>`;
   const air = settings.get('rover', false) ? 'Ground robot · ESP32' : 'F450 · ArduPilot';
-  if (S.mode === 'demo') return [`<span class="chip ${p.pad?.status === 'ready' ? 'ok' : 'caution'}">${icon('check')} Pad ${esc(p.pad?.status || 'unknown')}</span>`, `<span class="chip">${icon('drone')} ${air}</span>`, `<span class="chip caution">Wind 3.2 m/s · demo value</span>`, `<span class="chip caution">${icon('bolt')} 12.4 V · demo value</span>`].join('');
+  if (S.mode === 'demo') return [`<span class="chip ${p.pad?.status === 'ready' ? 'ok' : 'caution'}">${icon('check')} Pad ${esc(p.pad?.status || 'unknown')}</span>`, `<span class="chip">${p.legs.length} leg${p.legs.length > 1 ? 's' : ''} · ${p.handoffs.length} handoff${p.handoffs.length === 1 ? '' : 's'}</span>`, `<span class="chip">${icon('drone')} ${air}</span>`, `<span class="chip caution">Wind 3.2 m/s · demo value</span>`, `<span class="chip caution">${icon('bolt')} 12.4 V · demo value</span>`].join('');
   return [`<span class="chip ${p.pad?.status === 'ready' ? 'ok' : 'caution'}">${icon('check')} Pad ${esc(p.pad?.status || 'unknown')}</span>`, `<span class="chip">${icon('drone')} ${air}</span>`, `<span class="chip">Wind: not reported</span>`].join('');
 }
 
@@ -375,8 +434,9 @@ VIEWS.walk = {
   html: () => {
     const p = S.plan;
     return `<div class="grab"></div><div class="sheet-body"><div class="sheet-head">${backBtn('preview')}<h2>Walking directions</h2></div>
+      <p class="chip" style="margin-bottom:10px">Not drone-guided</p>
       <div class="card"><div class="between"><span class="muted">${esc(p.origin.label)} → ${esc(p.destination.name)}</span><b class="mono">${fmtDist(p.direct.lengthM)}</b></div><div class="between"><span class="muted">Estimated time</span><b class="mono">${fmtDuration(p.direct.etaS)}</b></div></div>
-      <p class="note" style="margin-top:12px">The highlighted line follows the campus path graph. Keep to footpaths; route inspection for footpath and road classification is still pending. No location is shared in this view.</p></div>`;
+      <p class="note" style="margin-top:12px">You walk this on your own; NAVI does not guide it. The dashed line follows the campus path graph. Keep to footpaths; route inspection for footpath and road classification is still pending. No location is shared in this view.</p></div>`;
   }
 };
 
@@ -427,12 +487,14 @@ function statusInfo() {
     meet: ['Walk to the pad', 'NAVI waits at the pad', 'walk', 'accent'],
     preflight: ['NAVI is getting ready', 'Pre-flight checks at the pad. Stay outside the marked area.', 'drone', 'accent'],
     takeoff: ['NAVI is taking off', 'Stay outside the pad area until it is overhead.', 'drone', 'accent'],
-    leading: ['Leading — follow NAVI', 'Walk at your own pace along the footpath', 'drone', 'ok'],
+    leading: ['NAVI is guiding you', 'Follow it at your own pace along the footpath', 'drone', 'ok'],
+    handoff: ['Waiting for the next leg', 'Wait here. Guidance will continue after the handoff.', 'clock', 'caution'],
+    interrupted: ['Guidance interrupted. Wait for the operator.', reason || 'The next leg cannot start yet.', 'user', 'danger'],
     waiting: ['Waiting for you', reason || 'NAVI is holding position', 'pause', 'caution'],
     paused: ['Paused', 'NAVI is holding position until you resume', 'pause', 'caution'],
     operator: ['Operator assisting', reason || 'The safety operator is in control', 'user', 'caution'],
     returning: ['Returning to the pad', reason || 'Guidance has ended', 'alert', 'danger'],
-    landing: [S.arrival.reached ? `You have arrived` : 'Landing', `NAVI is returning to land at ${S.plan?.pad?.name}. Landing not yet confirmed.`, 'flag', 'ok'],
+    landing: [S.arrival.reached ? `You have arrived` : 'Landing', `NAVI is returning to land at ${campus.pad(m?.landingPad)?.name || 'its pad'}. Landing not yet confirmed.`, 'flag', 'ok'],
     landed: ['Landed', 'Landing confirmed', 'check', 'ok']
   };
   let [title, sub, ic, tone] = map[m?.status] || ['Connecting…', 'Waiting for the ground station', 'link', 'accent'];
@@ -440,7 +502,9 @@ function statusInfo() {
   if (pend('resume')) { title = 'Resume requested…'; sub = 'Waiting for NAVI to confirm'; }
   if (pend('end')) { title = 'Ending guidance…'; sub = 'NAVI is returning to its pad'; }
   const gAge = fresh.ageS('ground', provider.now());
-  if (m && (S.link === 'down' || gAge > 8)) { sub = `Status from ${ago(gAge)}; connection lost`; tone = 'caution'; }
+  if (m && !['landed', 'ended'].includes(m.status) && (S.link === 'down' || gAge > 8)) { title = 'Guidance interrupted. Wait for the operator.'; sub = `Connection to the ground station lost (last status ${ago(gAge)}). Stay clear of NAVI.`; tone = 'danger'; }
+  else if (m && ['leading', 'waiting'].includes(m.status) && S.aircraft && fresh.ageS('aircraft', provider.now()) > 5) { title = 'Guidance interrupted. Wait for the operator.'; sub = 'NAVI’s position is not updating. Stay clear of it.'; tone = 'danger'; }
+  if (m?.status === 'handoff' && m.handoffRemainingS != null) sub = `Wait here. Guidance will continue after the handoff (about ${fmtShort(m.handoffRemainingS)}).`;
   return { title, sub, ic, tone };
 }
 const humanReason = r => r.replace(/^Visitor (\d+) m behind$/, 'You are $1 m behind, so NAVI waits').replace('Visitor stopped', 'You stopped, so NAVI waits').replace('Visitor asked NAVI to wait', 'You asked NAVI to wait');
@@ -454,7 +518,7 @@ VIEWS.guidance = {
     const paused = m.status === 'paused';
     const rover = settings.get('rover', false);
     return `<div class="grab"></div><div class="sheet-body">
-      <p class="trip-line">${icon('flag')}<span>To <b>${esc(S.plan?.destination.name || '')}</b>${S.plan?.pad ? ` · NAVI lands at ${esc(S.plan.pad.name)} after` : ''}</span></p>
+      <p class="trip-line">${icon('flag')}<span>To <b>${esc(S.plan?.destination.name || '')}</b></span><span class="chip leg-chip" data-k="legChip">Leg ${(m.legIndex || 0) + 1} of ${S.plan?.legs?.length || 1}</span></p>
       <div class="status-card chamfer" data-tone="${si.tone}" role="status">${icon(si.ic)}<div><b data-k="status">${esc(si.title)}</b><small data-k="statusSub">${esc(si.sub)}</small></div></div>
       <div class="metrics">
         <div class="metric"><small>To go</small><b data-k="remaining">—</b></div>
@@ -499,17 +563,27 @@ VIEWS.guidance = {
 
 VIEWS.arrival = {
   html: () => {
-    const p = S.plan, demo = S.mode === 'demo', L = S.arrival.landed;
+    const p = S.plan, demo = S.mode === 'demo', L = S.arrival.landed, m = S.mission || {};
+    const approach = p.finalApproach;
+    // Observed coverage: movement the ground station accepted, split by whether confirmed guidance
+    // was active; any final approach still to walk is unguided.
+    const obs = m.observed ? coverageOf(m.observed.guidedM, m.observed.unguidedM + (approach ? approach.lengthM : 0), CONFIG.minGuidedPercent) : null;
+    const landPad = campus.pad(L?.padId);
     return `<div class="grab"></div><div class="sheet-body arrive">
       <div class="badge">${icon('check')}</div>
       <p class="eyebrow">${demo ? 'Demo journey complete' : 'Landing confirmed'}</p>
-      <h1>${demo ? 'Demo journey complete' : `Welcome to ${esc(p.destination.name)}`}</h1>
-      <p class="lead">${demo ? `In this simulation you reached the ${esc(p.destination.name)} entrance, and the simulated aircraft landed at ${esc(p.pad.name)}.` : `You have reached the ${esc(p.destination.name)} entrance. NAVI has landed at ${esc(p.pad.name)}.`}</p>
+      <h1>${demo ? 'Demo journey complete' : approach ? 'Guided section complete' : `Welcome to ${esc(p.destination.name)}`}</h1>
+      <p class="lead">${demo ? `In this simulation you were guided toward the ${esc(p.destination.name)} entrance, and the simulated aircraft landed at ${esc(landPad?.name || 'its pad')}.` : `NAVI has landed at ${esc(landPad?.name || 'its pad')}.`}</p>
+      ${approach ? `<div class="card" style="text-align:left;margin-bottom:12px"><b>Walk the last ${fmtDist(approach.lengthM)} to the entrance</b><p class="small muted">About ${fmtDuration(approach.etaS)}, on your own (unguided). Follow the dashed line on the map.</p></div>` : ''}
       <ul class="checks" style="text-align:left;margin:10px 0 16px">
-        <li class="ok">${icon('check')}<span>Destination reached</span></li>
+        <li class="${S.arrival.reached ? 'ok' : 'info'}">${icon(S.arrival.reached ? 'check' : 'info')}<span>${S.arrival.reached ? 'Destination reached' : 'Destination entrance still ahead'}</span></li>
         <li class="ok">${icon('check')}<span>Aircraft landing</span></li>
-        <li class="ok">${icon('check')}<span>Landing confirmed${L?.padId ? ` at ${esc(campus.pad(L.padId)?.name || '')}` : ''}</span></li>
+        <li class="ok">${icon('check')}<span>Landing confirmed${landPad ? ` at ${esc(landPad.name)}` : ''}</span></li>
       </ul>
+      <dl class="kv" style="text-align:left;margin-bottom:14px"><dt>Planned drone-guided coverage</dt><dd>${fmtPercent(p.coverage?.percent)}</dd>
+        <dt>Observed drone-guided coverage</dt><dd>${obs?.applicable ? fmtPercent(obs.percent) : 'n/a'}</dd>
+        <dt>Observed guided / unguided</dt><dd>${obs?.applicable ? `${fmtDist(obs.guidedM)} / ${fmtDist(obs.unguidedM)}` : '—'}</dd></dl>
+      <p class="small muted" style="text-align:left;margin:-6px 0 12px">Observed values come from positions the ground station accepted while guidance was confirmed active${approach ? ', with the final approach counted as unguided' : ''}. They can be lower than planned if guidance paused or was interrupted.</p>
       <p class="section-label">Was NAVI helpful?</p>
       <div class="thumbs" role="group" aria-label="Feedback, stored only on this phone"><button class="btn" data-act="feedback" data-v="up" aria-pressed="${S.feedback === 'up'}">Yes</button><button class="btn" data-act="feedback" data-v="down" aria-pressed="${S.feedback === 'down'}">Not really</button></div>
       ${S.feedback ? '<p class="small muted" style="margin-top:6px">Thanks. Saved on this phone only.</p>' : ''}
@@ -524,7 +598,7 @@ VIEWS.ended = {
     const m = S.mission || {}, L = S.arrival.landed;
     return `<div class="grab"></div><div class="sheet-body">
       <div class="sheet-head"><h2>Guidance ended</h2></div>
-      <div class="card"><p>${esc(m.holdReason ? humanReason(m.holdReason) : 'Guidance ended.')}</p><p class="small muted" style="margin-top:6px">${L?.where === 'in_place' ? 'The aircraft landed where it was. The safety operator will recover it. Stay clear of it.' : `The aircraft landed at ${esc(S.plan?.pad?.name || 'its pad')}.`}</p></div>
+      <div class="card"><p>${esc(m.holdReason ? humanReason(m.holdReason) : 'Guidance ended.')}</p><p class="small muted" style="margin-top:6px">${L?.where === 'in_place' ? 'The aircraft landed where it was. The safety operator will recover it. Stay clear of it.' : `The aircraft landed at ${esc(campus.pad(L?.padId)?.name || 'its pad')}.`}</p>${S.mission?.observed && S.plan?.coverage?.applicable ? `<p class="small muted" style="margin-top:6px">Observed drone-guided walking: ${fmtDist(S.mission.observed.guidedM)} of the planned ${fmtDist(S.plan.coverage.guidedM)}.</p>` : ''}</div>
       ${S.plan?.direct ? `<p class="small" style="margin-top:12px">To reach ${esc(S.plan.destination.name)} on foot, use the walking directions.</p>` : ''}
     </div>
     <div class="sheet-foot"><div class="btn-row"><button class="btn" data-act="walk-only">Walking directions</button><button class="btn primary" data-act="finish">Finish</button></div></div>`;
@@ -577,7 +651,7 @@ const ACTIONS = {
   'pick-dest': b => selectDestination(b.dataset.id),
   request: (b, e) => { if (e.detail === 0) requestGuide(); }, // slide variant: keyboard / assistive activation; touch must slide
   'request-tap': () => requestGuide(),
-  'walk-only': () => { map.setPlan({ ...S.plan, transfer: null, guided: { coords: S.plan.direct.coords }, pad: null }); go('walk'); },
+  'walk-only': () => { map.setWalkOnly(S.plan); go('walk'); },
   'cancel-request': () => cancelRequest(),
   share: () => openOverlay('privacy'),
   'stop-share': () => openOverlay('stopshare'),
@@ -705,8 +779,8 @@ function startSharing() {
   S.sharing = { status: 'starting', error: null, sent: resume ? S.sharing.sent : 0, acked: resume ? S.sharing.acked : 0, rejected: 0, lastReject: null, handedOver: false };
   if (!resume) {
     clientFilter = new SampleFilter(campus.frame, CONFIG);
-    clientFilter.setRoute(S.plan.transfer?.needed ? S.plan.transfer.coords : S.plan.guided.coords);
-    fresh.clear(['valid', 'delivered']); pendingAcks.clear(); S.spark = [];
+    clientFilter.setRoute(currentRoute());
+    fresh.clear(['valid', 'delivered']); pendingAcks.clear(); S.spark = []; S.offTrack = [];
   }
   if (S.mode === 'demo') {
     if (resume && provider.walker) provider.visitor({ dropout: false }); else provider.startSimulatedVisitor(S.plan);
@@ -726,6 +800,10 @@ function onSample(sample) {
   if (r.accepted) {
     fresh.mark('valid', sample.timestamp);
     S.visitor = { rawLL: r.raw, ll: r.matched?.ll || null, accuracyM: sample.accuracyM, matched: r.matched, quality: r.quality, source: sample.source };
+    // Newly unguided movement: walking during a leg while guidance is not confirmed active, or off the route.
+    const m = S.mission, unguidedNow = m && m.stage === 'leg' && !['landed', 'ended'].includes(m.status) && (!m.guidanceActive || r.matched?.offRoute);
+    if (unguidedNow) { const t = S.offTrack.at(-1); if (t && !t.closed) t.push(r.raw); else S.offTrack.push([r.raw]); }
+    else if (S.offTrack.length) S.offTrack.at(-1).closed = true;
   } else { S.sharing.rejected++; S.sharing.lastReject = r.reason; }
   if (structural) return;
   if (provider.sendSample(sample)) { S.sharing.sent++; pendingAcks.set(sample.seq, sample.timestamp); if (S.sharing.status === 'starting') S.sharing.status = 'waiting'; }
@@ -792,9 +870,9 @@ async function endSession() {
   const closing = provider?.closeSession?.().catch(() => {});
   Object.assign(S, { plan: null, request: null, mission: null, aircraft: null, visitor: null, idemKey: null, source: 'visitor', arrival: { reached: false, landed: null }, feedback: null, destinationId: null, detailsOpen: false, cancelError: null });
   S.sharing = { status: 'off', error: null, sent: 0, acked: 0, rejected: 0, lastReject: null, handedOver: false };
-  S.commands.clear(); S.events = []; fresh.clear(); S.dismissed.clear();
+  S.commands.clear(); S.events = []; fresh.clear(); S.dismissed.clear(); S.offTrack = [];
   try { sessionStorage.clear(); } catch {}
-  map?.setPlan(null); map?.setVisitor(null); map?.setAircraft(null); map?.setLanding(null);
+  map?.setPlan(null); map?.setVisitor(null); map?.setAircraft(null); map?.setLanding(null); map?.setProgress({});
   await closing;
 }
 
@@ -812,7 +890,8 @@ function refresh() {
   const airAge = fresh.ageS('aircraft', now);
   if (S.aircraft?.ll && ['dispatch', 'guidance'].includes(S.screen)) map.setAircraft({ ll: S.aircraft.ll, heading: S.aircraft.headingDeg, stale: airAge > 3, ageText: ago(airAge), rover: settings.get('rover', false) });
   else if (!['dispatch', 'guidance'].includes(S.screen)) map.setAircraft(null);
-  map.setLanding(S.screen === 'guidance' && S.mission?.status === 'landing' && S.plan?.pad ? S.plan.pad.ll : null);
+  const landPad = S.mission?.status === 'landing' ? campus.pad(S.mission.landingPad) : S.mission?.phase === 'LEG_LANDING' ? campus.pad(S.mission.handoffPadId) : null;
+  map.setLanding(S.screen === 'guidance' && landPad ? landPad.ll : null);
   if (S.screen === 'guidance') patchGuidance();
   if (S.screen === 'locate' && S.locate.fix) { const el = $('[data-k=fixAge]'); if (el) el.textContent = ago((Date.now() - S.locate.fix.timestamp) / 1000); }
   updateHud(); updateBanners();
@@ -822,6 +901,8 @@ function patchGuidance() {
   const now = provider.now(), m = S.mission || {}, set = (k, v) => { const el = sheet.querySelector(`[data-k=${k}]`); if (el && el.textContent !== v) el.textContent = v; };
   const si = statusInfo();
   set('status', si.title); set('statusSub', si.sub);
+  set('legChip', `Leg ${Math.min((m.legIndex || 0) + 1, S.plan?.legs?.length || 1)} of ${S.plan?.legs?.length || 1}`);
+  if (S.offTrack.length && S.offTrack.length !== S.offTrackDrawn) { S.offTrackDrawn = S.offTrack.length; drawProgress(); }
   const card = sheet.querySelector('.status-card'); if (card && card.dataset.tone !== si.tone) card.dataset.tone = si.tone;
   set('remaining', S.arrival.reached ? 'arrived' : fmtDist(m.remainingM)); set('eta', S.arrival.reached ? '—' : fmtShort(m.etaS));
   const posUncertain = fresh.ageS('valid', now) > 10 || S.visitor?.matched?.offRoute || S.visitor?.matched?.ambiguous;
@@ -909,8 +990,9 @@ function computeBanners() {
   if (S.screen === 'guidance' && a?.ekf === 'DEGRADED') add('ekf', 'caution', 'alert', 'NAVI’s own GPS is degraded', 'It is holding position and may land where it is. Stay clear.');
   if (S.screen === 'guidance' && /Geofence|corridor/.test(m.holdReason || '')) add('fence', 'caution', 'alert', 'NAVI drifted near the campus boundary', 'It has stopped and is moving back inside the campus corridor.');
   if (S.screen === 'guidance' && S.sharing.handedOver) add('handover', 'info', 'user', 'The operator is assisting', 'Their device now provides your position. Your phone’s position is not being used.');
+  if (S.screen === 'guidance' && m.status === 'interrupted') add('interrupted', 'critical', 'user', 'Guidance interrupted. Wait for the operator.', `${m.holdReason || 'The next leg cannot start yet'}. Stay at the pad; do not continue on your own.`);
   if (S.screen === 'guidance' && m.status === 'operator') add('rc', 'info', 'user', 'The safety operator has control', m.holdReason ? humanReason(m.holdReason) : 'Follow the operator’s instructions.');
-  if (S.screen === 'guidance' && m.status === 'landing' && S.arrival.reached) add('arrived', 'info', 'flag', `You have reached ${S.plan.destination.name}`, `NAVI is returning to land at ${S.plan.pad.name}. Stay clear until it lands.`);
+  if (S.screen === 'guidance' && m.status === 'landing' && S.arrival.reached) add('arrived', 'info', 'flag', `You have reached ${S.plan.destination.name}`, `NAVI is returning to land at ${campus.pad(m.landingPad)?.name || 'its pad'}. Stay clear until it lands.`);
   if (S.notice && Date.now() < S.notice.until) add('notice', 'info', 'info', S.mode === 'demo' ? 'Switched to demo mode' : 'Switched to live mode', S.notice.text);
   const rank = { critical: 0, caution: 1, info: 2 };
   return out.filter(b => !S.dismissed.has(b.id)).sort((x, y) => rank[x.level] - rank[y.level]).slice(0, 3);
@@ -960,8 +1042,8 @@ const OVERLAYS = {
     <dl class="kv" style="grid-template-columns:auto 1fr"><dt>What</dt><dd style="text-align:left;font-family:var(--body)">Position, its accuracy and the time it was measured</dd><dt>Why</dt><dd style="text-align:left;font-family:var(--body)">To keep NAVI about ${CONFIG.leadTargetM} m ahead and to stop when you stop</dd><dt>Who</dt><dd style="text-align:left;font-family:var(--body)">${S.mode === 'demo' ? 'Nobody: the demo runs only in this browser' : 'The NAVI ground station on the campus network and its operator'}</dd><dt>How long</dt><dd style="text-align:left;font-family:var(--body)">Until you finish or end guidance. Session data is then deleted.</dd></dl>
     ${S.mode === 'demo' ? '<p class="note" style="margin-top:12px">Demo: a simulated visitor walks the route instead of your real position.</p>' : '<p class="note" style="margin-top:12px">Keep this page open while walking. Phones may stop reporting position when the screen is locked.</p>'}
     <div class="btn-row" style="margin-top:16px"><button class="btn" data-act="close">Not now</button><button class="btn primary" data-act="share-yes">Share my location</button></div>`,
-  stopshare: () => `${head('Stop sharing your location?')}<p class="lead">Without your position NAVI cannot pace you. It will hold where it is and, if sharing does not resume within about a minute, return to land at ${esc(S.plan?.pad?.name || 'its pad')}.</p><p>The operator can assist with their own device. You can share again at any time.</p><div class="btn-row" style="margin-top:14px"><button class="btn" data-act="close">Keep sharing</button><button class="btn primary" data-act="stop-share-yes">Stop sharing</button></div>`,
-  end: () => `${head('End guidance?')}<p class="lead">NAVI will stop guiding and return to land at ${esc(S.plan?.pad?.name || 'its pad')}. Stay clear of it.</p><div class="btn-row"><button class="btn" data-act="close">Keep going</button><button class="btn primary" data-act="end-yes">End guidance</button></div>`,
+  stopshare: () => `${head('Stop sharing your location?')}<p class="lead">Without your position NAVI cannot pace you. It will hold where it is and, if sharing does not resume within about a minute, return to land at its launch pad.</p><p>The operator can assist with their own device. You can share again at any time.</p><div class="btn-row" style="margin-top:14px"><button class="btn" data-act="close">Keep sharing</button><button class="btn primary" data-act="stop-share-yes">Stop sharing</button></div>`,
+  end: () => `${head('End guidance?')}<p class="lead">NAVI will stop guiding and return to land at its launch pad. Stay clear of it.</p><div class="btn-row"><button class="btn" data-act="close">Keep going</button><button class="btn primary" data-act="end-yes">End guidance</button></div>`,
   operator: () => `${head('Operator assistance')}<p class="lead">During supervised trials a NAVI team member walks with you, holding the FlySky FS-i6X radio. They can hold the aircraft, take manual control or land it.</p>
     <p>If something feels wrong, stop walking and speak to them. For an immediate stop, use <b>Emergency stop guidance</b>; it asks the ground station to end guidance and bring the aircraft back.</p>
     <p class="note" style="margin-top:12px">If your phone cannot share location, the operator’s own device can take over as the position source. That handover is done by the operator, not from this phone.</p>
@@ -972,9 +1054,13 @@ const OVERLAYS = {
     <div class="seg" role="group" aria-label="Base map">${[['path', 'Paths only'], ['satellite', 'Satellite'], ['streets', 'Streets']].map(([k, l]) => `<button data-act="base" data-k="${k}" aria-pressed="${map.baseKey === k}">${l}</button>`).join('')}</div>
     <p class="small muted" style="margin-top:6px">Paths-only works offline. Satellite (© Esri) and street (© OpenStreetMap) tiles load from the internet and are not stored for offline use.</p>
     <p class="section-label">Layers</p>
+    ${sw('layer', S.layers.pads !== false, `Pads (${campus.pads.length}, proposed sites)`, 'data-k="pads"')}
     ${sw('layer', S.layers.buffer, '40 m buffered boundary', 'data-k="buffer"')}
     ${sw('layer', S.layers.network, `Path network (${campus.stats.segments} segments)`, 'data-k="network"')}
     ${sw('layer', S.layers.nodes, `Graph nodes (${campus.stats.nodes})`, 'data-k="nodes"')}
+    <details style="margin-top:10px"><summary class="small">List of pads (${campus.pads.length})</summary>
+      <p class="small muted" style="margin:6px 0">Every pad is a proposed site: placement pending inspection. Diamonds on the map; a number in a circle groups nearby pads (tap to zoom).</p>
+      <ul class="small" style="padding-left:18px;margin:0;color:var(--text2)">${[...campus.pads].sort((a, b) => a.name.localeCompare(b.name)).map(p => `<li><b style="color:var(--text)">${esc(p.name)}</b> · ${esc({ source: 'source pad', destination: 'building entrance', gate: 'gate', junction: 'path junction' }[p.kind] || p.kind)}${p.serves?.length ? ` · serves ${esc(p.serves.map(id => campus.destination(id)?.name).join(', '))}` : ''}${p.shared ? ' · shared entrance' : ''} · ${esc(map.padStatus[p.id] || 'unknown')}</li>`).join('')}</ul></details>
     <p class="small muted" style="margin-top:10px">Computed from data ${esc(campus.version)}: ${campus.stats.nodes} nodes, ${campus.stats.segments} segments, ${campus.stats.networkKm.toFixed(2)} km. The source reports ${campus.raw.sourceReported.segments} segments and ${campus.raw.sourceReported.networkKm} km for the full ${campus.raw.sourceReported.surveyedNodes}-node survey.</p>`,
   settings: () => `${head('Settings')}
     <p class="section-label">Mode</p>
@@ -1008,8 +1094,12 @@ const OVERLAYS = {
     <p class="section-label">Operator</p>
     ${sw('demo-auto', provider.gs.autoApprove, 'Auto-approve requests')}
     <div class="btn-row" style="margin-top:8px"><button class="btn" data-act="demo-decide" data-v="1" ${pend ? '' : 'disabled'}>Approve</button><button class="btn" data-act="demo-decide" data-v="0" ${pend ? '' : 'disabled'}>Decline</button></div>
-    <p class="section-label">Pad readiness</p>
-    ${campus.pads.map(p => sw('demo-pad', pads[p.id] !== 'unavailable', `${esc(p.name)} <span class="muted small">(${esc(pads[p.id])})</span>`, `data-k="${p.id}"`)).join('')}
+    <p class="section-label">Aircraft</p>
+    ${sw('demo-aircraft', (provider.resources?.().aircraftAvailable ?? 1) > 0 || !!S.mission, 'Guide aircraft available')}
+    <p class="section-label">Pads on ${S.plan?.pads ? 'this route' : 'the network'}</p>
+    <p class="small muted">${S.plan?.pads ? 'Preview the route again after a change.' : 'Choose a destination to see the pads on its route.'} All pads are proposed sites (simulated readiness).</p>
+    ${(S.plan?.pads ? S.plan.pads.map(x => campus.pad(x.id)) : campus.pads.filter(p => p.kind === 'source')).map(p => sw('demo-pad', pads[p.id] !== 'unavailable', `${esc(p.name)} <span class="muted small">(${esc(pads[p.id])})</span>`, `data-k="${p.id}"`) + sw('demo-handoff', provider.resources?.().padHandoff[p.id], `↳ handoff crew at ${esc(p.name)}`, `data-k="${p.id}"`)).join('')}
+    <button class="btn block" style="margin-top:8px" data-act="demo-pads-reset">Make every pad ready and staffed</button>
     <p class="section-label">Simulated visitor</p>
     <div class="seg" role="group" aria-label="Visitor walking">${['walk', 'slow', 'stop'].map(k => `<button data-act="demo-walk" data-k="${k}" aria-pressed="${w?.behaviour === k}" ${w ? '' : 'disabled'}>${k[0].toUpperCase() + k.slice(1)}</button>`).join('')}</div>
     ${sw('demo-visitor', w?.dropout, 'Phone stops reporting (stale)', 'data-k="dropout"')}
@@ -1025,7 +1115,7 @@ const OVERLAYS = {
 };
 Object.assign(ACTIONS, {
   base: b => { setBase(b.dataset.k); openOverlay('layers'); },
-  layer: b => { S.layers[b.dataset.k] = !S.layers[b.dataset.k]; settings.set('layers', S.layers); map.setLayers(S.layers); openOverlay('layers'); },
+  layer: b => { S.layers[b.dataset.k] = b.dataset.k === 'pads' ? S.layers.pads === false : !S.layers[b.dataset.k]; settings.set('layers', S.layers); map.setLayers(S.layers); openOverlay('layers'); },
   mode: async b => { if (b.dataset.k === S.mode) return; closeOverlay(); await setMode(b.dataset.k); },
   theme: b => { settings.set('theme', b.dataset.k); applyTheme(); openOverlay('settings'); },
   set: b => { const k = b.dataset.k; settings.set(k, !settings.get(k, k === 'sound' || k === 'haptics')); if (k === 'sound') unlockAudio(); openOverlay('settings'); render(); },
@@ -1033,7 +1123,10 @@ Object.assign(ACTIONS, {
   'clear-favs': () => { S.favorites.clear(); settings.set('favorites', []); openOverlay('settings'); },
   'demo-auto': () => { provider.setAutoApprove(!provider.gs.autoApprove); openOverlay('demo'); },
   'demo-decide': b => { provider.decide(b.dataset.v === '1'); openOverlay('demo'); },
-  'demo-pad': b => { const st = provider.padStatus()[b.dataset.k]; provider.setPad(b.dataset.k, st === 'unavailable' ? 'ready' : 'unavailable'); openOverlay('demo'); },
+  'demo-aircraft': () => { const r = provider.resources(); provider.setAircraft(r.aircraftAvailable > 0 ? 0 : 1); openOverlay('demo'); },
+  'demo-handoff': b => { provider.setHandoff(b.dataset.k, !provider.resources().padHandoff[b.dataset.k]); refreshPads(); openOverlay('demo'); },
+  'demo-pads-reset': () => { for (const p of campus.pads) { if (provider.padStatus()[p.id] !== 'busy') provider.setPad(p.id, 'ready'); provider.setHandoff(p.id, true); } refreshPads(); openOverlay('demo'); },
+  'demo-pad': b => { const st = provider.padStatus()[b.dataset.k]; provider.setPad(b.dataset.k, st === 'unavailable' ? 'ready' : 'unavailable'); refreshPads(); openOverlay('demo'); },
   'demo-walk': b => { provider.visitor({ behaviour: b.dataset.k }); openOverlay('demo'); },
   'demo-visitor': b => { const w = provider.walker; if (w) provider.visitor({ [b.dataset.k]: !w[b.dataset.k] }); openOverlay('demo'); },
   'demo-spike': () => { provider.visitor({ spike: true }); },

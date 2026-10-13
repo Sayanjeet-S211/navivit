@@ -65,9 +65,11 @@ export class DemoProvider extends Emitter {
   /* ---------- simulated visitor (demo only) ---------- */
   startSimulatedVisitor(plan) {
     this.walker = new SimulatedWalker({ frame: this.campus.frame, now: this.now });
-    const t = plan.transfer?.coords?.length > 1 ? plan.transfer.coords : [plan.pad.ll];
-    this.walker.setPath([...t, ...plan.guided.coords.slice(1)]);
-    this.walker.transferM = plan.transfer?.needed ? plan.transfer.lengthM - (plan.origin.offGraphM || 0) : 0;
+    // The whole visitor route: unguided walk to the first pad, every guided leg, any final approach.
+    const parts = [plan.transfer?.needed && plan.transfer.coords?.length > 1 ? plan.transfer.coords : [plan.startPad.ll], ...plan.legs.map(l => l.coords), plan.finalApproach?.coords || []];
+    const path = [];
+    for (const part of parts) for (const c of part) if (!path.length || path.at(-1)[0] !== c[0] || path.at(-1)[1] !== c[1]) path.push(c);
+    this.walker.setPath(path);
   }
   stopSimulatedVisitor() { this.walker = null; }
   visitor(patch) { if (this.walker) Object.assign(this.walker, patch); }
@@ -77,6 +79,9 @@ export class DemoProvider extends Emitter {
   pending() { const s = this.gs.session(this.session?.sessionId); return s?.request?.state === 'AWAITING_OPERATOR' ? s.request.id : null; }
   decide(approve) { const id = this.pending(); return id ? this.gs.decide(id, approve, approve ? null : 'Declined by the operator (demo).') : null; }
   setPad(id, status) { return this.gs.setPad(id, status); }
+  setHandoff(id, on) { return this.gs.setHandoff(id, on); }
+  setAircraft(n) { return this.gs.setAircraft(n); }
+  resources() { return this.gs.resources(); }
   padStatus() { return { ...this.gs.padStatus }; }
   fault(name, on) { const s = this.gs.session(this.session?.sessionId); return s ? this.gs.fault(s, name, on) : null; }
   faults() { return [...(this.gs.session(this.session?.sessionId)?.faults || [])]; }
@@ -97,9 +102,9 @@ export class DemoProvider extends Emitter {
   _walk(dt) {
     const w = this.walker; if (!w) return;
     const s = this.gs.session(this.session?.sessionId), m = s?.mission;
-    const ph = m?.phase;
-    const atPad = !m || ['MEET', 'PREFLIGHT', 'TAKEOFF'].includes(ph);
-    w.setLimit(atPad ? w.transferM : ['RETURNING', 'EMERGENCY_LAND', 'LANDED'].includes(ph) && !m.arrivedEmitted ? w.s : w.transferM + Math.max(0, m.sa - 3));
+    // A cooperative visitor: walks to the first pad, follows the aircraft, waits at handoff pads.
+    const lim = m ? m.simVisitorLimitM() : 0;
+    w.setLimit(lim == null ? w.s : lim);
     if (s?.request && ['MEET_AT_PAD', 'READY'].includes(s.request.state) || m) w.step(dt);
     const smp = w.sample();
     if (!smp) return;

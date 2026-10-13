@@ -23,7 +23,7 @@ const newPage = async (opts = {}, init = {}) => {
   await page.goto(BASE); await page.waitForSelector('.sheet h1');
   return { ctx, page };
 };
-const state = page => page.evaluate(() => ({ screen: document.getElementById('app').dataset.screen, status: document.querySelector('.status-card b')?.textContent || '', h: document.querySelector('.sheet h1,.sheet h2')?.textContent || '', banners: [...document.querySelectorAll('.banner b')].map(b => b.textContent), pill: document.getElementById('mode-pill').textContent }));
+const state = page => page.evaluate(() => ({ screen: document.getElementById('app').dataset.screen, status: document.querySelector('.status-card b')?.textContent || '', leg: document.querySelector('[data-k=legChip]')?.textContent || '', h: document.querySelector('.sheet h1,.sheet h2')?.textContent || '', banners: [...document.querySelectorAll('.banner b')].map(b => b.textContent), pill: document.getElementById('mode-pill').textContent }));
 const waitFor = async (page, pred, ms = 120000) => { const t = Date.now(); for (;;) { const s = await state(page); if (pred(s)) return s; if (Date.now() - t > ms) throw new Error('timeout; last ' + JSON.stringify(s)); await page.waitForTimeout(250); } };
 const toPreview = async (page, from, to) => {
   await page.click('text=Choose a place'); await page.fill('#place-q', from); await page.click('.pick >> nth=0'); await page.click('text=Confirm starting point');
@@ -38,15 +38,16 @@ try {
     check('demo label is persistent', /Demo · no aircraft connected/i.test((await state(page)).pill));
     await toPreview(page, 'gate pad', 'gazebo');
     const txt = await page.textContent('.sheet');
-    check('preview shows transfer, guided leg and estimate', /Walk to South Pad/.test(txt) && /guides you to the entrance/.test(txt) && /0\.8 m\/s/.test(txt));
+    check('preview shows planned coverage, legend, itinerary and estimate', /Planned drone-guided coverage/.test(txt) && /Meets 95%/.test(txt) && /Leg 1: NAVI guides you/.test(txt) && /Drone-guided/.test(txt) && /0\.8 m\/s/.test(txt));
+    check('guidance starts at the gate (no long unguided approach)', /Meet NAVI at Gate Pad/.test(txt));
     await page.click('#request');
     await page.waitForSelector('[data-act=share]', { timeout: 20000 });
     check('sharing is not active before consent', /Not shared/i.test(await page.textContent('.sheet')));
     await page.click('[data-act=share]'); await page.click('[data-act=share-yes]');
     await page.waitForFunction(() => /Sharing active/i.test(document.querySelector('.sheet')?.innerText || '') || document.getElementById('app').dataset.screen === 'guidance', null, { timeout: 15000 });
     check('sharing becomes active after an acknowledged sample', true);
-    await waitFor(page, s => /Leading/.test(s.status));
-    check('guidance shows confirmed leading status', true);
+    await waitFor(page, s => /NAVI is guiding you/.test(s.status));
+    check('guidance shows confirmed "NAVI is guiding you" status', true);
     const s = await waitFor(page, s => s.screen === 'arrival');
     check('arrival says "Demo journey complete"', /Demo journey complete/.test(s.h));
     await page.click('[data-act=finish]');
@@ -55,25 +56,45 @@ try {
     await ctx.close();
   }
 
+  /* 1b. multi-leg trip with handoffs */
+  {
+    const { ctx, page } = await newPage();
+    await toPreview(page, 'gate pad', 'sedaxis');
+    const txt = await page.textContent('.sheet');
+    check('multi-leg preview lists handoffs with estimated waits', /Handoff at .*: wait about/.test(txt) && /Leg 2:/.test(txt));
+    await page.click('#request');
+    await page.waitForSelector('[data-act=share]', { timeout: 20000 }); await page.click('[data-act=share]'); await page.click('[data-act=share-yes]');
+    await waitFor(page, s => /NAVI is guiding you/.test(s.status));
+    const h = await waitFor(page, s => /Waiting for the next leg/.test(s.status), 200000);
+    check('handoff shows "Wait here. Guidance will continue after the handoff."', /Wait here\. Guidance will continue after the handoff/.test(await page.textContent('.status-card small')), h.status);
+    await waitFor(page, s => /NAVI is guiding you/.test(s.status) && /Leg 2/.test(s.leg), 200000);
+    check('guidance continues on leg 2 after the handoff', true);
+    const arr = await waitFor(page, s => s.screen === 'arrival', 400000);
+    const t2 = await page.textContent('.sheet');
+    check('arrival shows planned and observed coverage', /Planned drone-guided coverage/.test(t2) && /Observed drone-guided coverage\s*\d/.test(t2), arr.h);
+    await ctx.close();
+  }
+
   /* 2. controls and faults */
   {
     const { ctx, page } = await newPage();
     await toPreview(page, 'east pad', 'sedaxis'); await page.click('#request');
     await page.waitForSelector('[data-act=share]', { timeout: 20000 }); await page.click('[data-act=share]'); await page.click('[data-act=share-yes]');
-    await waitFor(page, s => /Leading/.test(s.status));
+    await waitFor(page, s => /NAVI is guiding you/.test(s.status));
     await page.click('[data-act=cmd][data-cmd=pause]');
     check('"Wait for me" shows "Pause requested" before confirmation', /Pause requested/.test((await state(page)).status));
     await waitFor(page, s => /^Paused/.test(s.status), 20000);
     check('pause confirmed by the ground station', true);
-    await page.click('[data-act=cmd][data-cmd=resume]'); await waitFor(page, s => /Leading/.test(s.status), 30000);
+    await page.click('[data-act=cmd][data-cmd=resume]'); await waitFor(page, s => /NAVI is guiding you/.test(s.status), 30000);
     await demoToggle(page, '[data-act=demo-visitor][data-k=dropout]');
     const st = await waitFor(page, s => s.banners.some(b => /No position from your phone/.test(b)), 30000);
     check('stale position alert after 30 s and server hold', /No visitor position/.test(await page.textContent('.status-card small')), JSON.stringify(st.banners));
-    await demoToggle(page, '[data-act=demo-visitor][data-k=dropout]'); await waitFor(page, s => /Leading/.test(s.status), 40000);
+    await demoToggle(page, '[data-act=demo-visitor][data-k=dropout]'); await waitFor(page, s => /NAVI is guiding you/.test(s.status), 40000);
     await demoToggle(page, '[data-act=demo-link]');
     await page.click('[data-act=estop]'); await page.waitForTimeout(4600);
     check('unconfirmed emergency stop shows the exact warning', (await page.textContent('#banners')).includes('Could not confirm the request.Stay clear of the aircraft and contact the operator.'));
     check('no false "returning" while unconfirmed', !/Returning/.test((await state(page)).status));
+    check('lost link shows "Guidance interrupted. Wait for the operator."', /Guidance interrupted\. Wait for the operator\./.test((await state(page)).status));
     await demoToggle(page, '[data-act=demo-link]'); await page.waitForTimeout(1500);
     await page.click('#banners [data-act=estop]');
     await waitFor(page, s => /Returning|Ending/.test(s.status), 15000);
@@ -89,7 +110,7 @@ try {
     const { ctx, page } = await newPage();
     await toPreview(page, 'south pad', 'gazebo'); await page.click('#request');
     await page.waitForSelector('[data-act=share]', { timeout: 20000 }); await page.click('[data-act=share]'); await page.click('[data-act=share-yes]');
-    await waitFor(page, s => /Leading/.test(s.status));
+    await waitFor(page, s => /NAVI is guiding you/.test(s.status));
     await page.click('#details summary'); await page.click('[data-act=stop-share]'); await page.click('[data-act=stop-share-yes]');
     const s = await waitFor(page, s => s.banners.includes('Location sharing is off'), 5000);
     check('stopping sharing is explicit and explains the consequence', !!s);

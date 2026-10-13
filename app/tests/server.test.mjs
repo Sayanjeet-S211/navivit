@@ -88,6 +88,22 @@ test('visitor flow: validation, idempotent request, session isolation', async ()
   assert.equal((await call(`/api/sessions/${a.sessionId}/cancel`, { method: 'POST', token: a.token, body: {} })).json.state, 'CANCELLED');
 });
 
+test('pad configuration and coverage come from the server; operator controls resources', async () => {
+  const cfg = (await call('/api/pad-config')).json;
+  assert.equal(cfg.schema, 'navi-pads/1');
+  assert.ok(cfg.pads.every(p => p.approval === 'proposed'));
+  const s = (await call('/api/visitor-sessions', { method: 'POST', body: {} })).json;
+  const plan = (await call('/api/routes/preview', { method: 'POST', token: s.token, body: { origin: gate, destinationId: 'guest-house' } })).json;
+  assert.ok(plan.coverage.percent >= 95 && plan.legs.length >= 1);
+  assert.equal((await call('/api/operator/aircraft', { method: 'POST', token: OP, body: { available: 0 } })).json.aircraftAvailable, 0);
+  const none = (await call('/api/routes/preview', { method: 'POST', token: s.token, body: { origin: gate, destinationId: 'guest-house' } })).json;
+  assert.equal(none.availability, 'unavailable');
+  assert.ok(none.reasons.some(r => r.code === 'no_aircraft'));
+  await call('/api/operator/aircraft', { method: 'POST', token: OP, body: { available: 1 } });
+  assert.equal((await call('/api/operator/pads/gate', { method: 'POST', token: OP, body: { handoff: false } })).json.handoff, false);
+  await call('/api/operator/pads/gate', { method: 'POST', token: OP, body: { handoff: true } });
+});
+
 test('operator endpoints need the operator token', async () => {
   assert.equal((await call('/api/operator/sessions')).status, 401);
   const s = (await call('/api/visitor-sessions', { method: 'POST', body: {} })).json;

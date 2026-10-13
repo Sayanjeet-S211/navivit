@@ -32,7 +32,8 @@ const OPERATOR_TOKEN = arg('operator-token', process.env.NAVI_OPERATOR_TOKEN || 
 const TLS = !!(CERT && KEY);
 
 const campusRaw = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/campus.v1.json'), 'utf8'));
-const campus = new Campus(campusRaw, CONFIG);
+const padsRaw = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/pads.v1.json'), 'utf8'));
+const campus = new Campus(campusRaw, CONFIG, padsRaw);
 const gs = new GroundStation({ campus, autoApprove: flag('auto-approve'), aircraftSource: 'simulated' });
 const TICK_MS = 100;
 setInterval(() => gs.tick(TICK_MS / 1000), TICK_MS).unref?.();
@@ -113,6 +114,7 @@ const route = (method, pattern, handler, { auth = 'none', mutate = method !== 'G
 
 route('GET', '/api/health', () => ({ service: 'navi-gcs', label: 'NAVI mock ground station', aircraftSource: 'simulated', campusVersion: campus.version, time: Date.now() }));
 route('GET', '/api/campus', () => campusRaw);
+route('GET', '/api/pad-config', () => padsRaw);
 route('GET', '/api/pads', () => gs.pads());
 
 route('POST', '/api/visitor-sessions', (req, res, p, ip) => {
@@ -145,13 +147,13 @@ route('POST', '/api/sessions/:id/actions', async (req, res, { s }) => {
 
 /* operator */
 route('GET', '/api/operator/sessions', () => ({
-  autoApprove: gs.autoApprove, pads: gs.pads(),
+  autoApprove: gs.autoApprove, aircraftAvailable: gs.aircraftAvailable, pads: gs.pads(),
   sessions: [...gs.sessions.values()].map(s => {
     const m = s.mission, st = m?.status(), t = m?.lastTelemetry;
     return {
       sessionId: s.id, createdAt: s.created, lastSeenAgeS: (Date.now() - s.lastSeen) / 1000, closed: !!s.closed, source: s.source,
-      request: s.request ? { requestId: s.request.id, state: s.request.state, reason: s.request.reason, destination: s.request.plan?.destination?.name, pad: s.request.plan?.pad?.name, guidedM: s.request.plan?.guided?.lengthM } : null,
-      mission: st ? { status: st.status, holdReason: st.holdReason, leadM: st.leadM, visitorProgressM: st.visitorProgressM, guidedLengthM: st.guidedLengthM, lastAcceptedAgeS: st.lastAcceptedAgeS, rc: !!m.rc } : null,
+      request: s.request ? { requestId: s.request.id, state: s.request.state, reason: s.request.reason, destination: s.request.plan?.destination?.name, pad: s.request.plan?.startPad?.name, legs: s.request.plan?.legs?.length, plannedCoveragePct: s.request.plan?.coverage?.percent ?? null, guidedM: s.request.plan?.coverage?.guidedM } : null,
+      mission: st ? { status: st.status, holdReason: st.holdReason, legIndex: st.legIndex, legCount: st.legCount, handoffPadId: st.handoffPadId, observed: st.observed, leadM: st.leadM, visitorProgressM: st.visitorProgressM, guidedLengthM: st.guidedLengthM, lastAcceptedAgeS: st.lastAcceptedAgeS, rc: !!m.rc } : null,
       aircraft: t ? { mode: t.mode, altM: t.altM, batteryV: t.batteryV, batteryPct: t.batteryPct, ekf: t.ekf, sats: t.sats, hdop: t.hdop, rssiDbm: t.rssiDbm, ageS: (Date.now() - t.measuredAt) / 1000 } : null,
       lastFix: s.lastFix ? { accuracyM: s.lastFix.acc, ageS: (Date.now() - s.lastFix.t) / 1000 } : null,
       faults: [...s.faults]
@@ -164,8 +166,11 @@ route('POST', '/api/operator/requests/:rid/decision', async (req, res, { params 
   const r = gs.decide(params.rid, !!b.approve, str(b.reason, 160) ? b.reason : null);
   return r.error ? fail(res, 409, r.error) : r;
 }, { auth: 'operator' });
+route('POST', '/api/operator/aircraft', async req => gs.setAircraft((await readJson(req)).available), { auth: 'operator' });
 route('POST', '/api/operator/pads/:pid', async (req, res, { params }) => {
-  const b = await readJson(req), r = gs.setPad(params.pid, b.status);
+  const b = await readJson(req);
+  if (typeof b.handoff === 'boolean') { const h = gs.setHandoff(params.pid, b.handoff); if (h.error) return fail(res, 400, h.error); if (b.status === undefined) return h; }
+  const r = gs.setPad(params.pid, b.status);
   return r.error ? fail(res, 400, r.error) : r;
 }, { auth: 'operator' });
 const opSession = (res, id) => { const s = gs.sessions.get(id); if (!s) fail(res, 404, 'unknown_session'); return s; };

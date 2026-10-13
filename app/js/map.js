@@ -36,13 +36,15 @@ export class MapView {
     this.boundary = L.polygon(campus.boundary, { fill: false, weight: 1.6, dashArray: '6 6', className: 'boundary', interactive: false });
     this.network = L.layerGroup(campus.edges.map(e => L.polyline([campus.node(e.a).ll, campus.node(e.b).ll], { pane: 'network', weight: 2, className: 'net', interactive: false })));
     this.nodes = L.layerGroup([...campus.nodes.values()].map(n => L.circleMarker(n.ll, { pane: 'network', radius: 2.5, weight: 0, fillOpacity: .9, className: 'node', interactive: false })));
-    this.pads = L.layerGroup(campus.pads.map((p, i) => L.marker(p.ll, { icon: L.divIcon({ className: 'mk-pad', html: `<span>${i + 1}</span>`, iconSize: [22, 22], iconAnchor: [11, 11] }), keyboard: false, title: `${p.name} (launch pad)` }).bindTooltip(p.name, { direction: 'top', offset: [0, -10] })));
+    this.pads = L.layerGroup(); this.padStatus = {}; this.padHandoff = {}; this.showPads = true;
+    this.map.on('zoomend', () => this.renderPads());
     this.routeLayer = L.layerGroup().addTo(this.map);
+    this.progressLayer = L.layerGroup().addTo(this.map);
     this.originLayer = L.layerGroup().addTo(this.map);
     this.visitorLayer = L.layerGroup().addTo(this.map);
     this.aircraftLayer = L.layerGroup().addTo(this.map);
     this.landingLayer = L.layerGroup().addTo(this.map);
-    this.boundary.addTo(this.map); this.pads.addTo(this.map);
+    this.boundary.addTo(this.map); this.pads.addTo(this.map); this.renderPads();
     this.base = null; this.baseKey = 'path';
   }
 
@@ -57,9 +59,38 @@ export class MapView {
     this.base.on('tileerror', () => { if (++errors === 4) this.onTileError?.(this.baseKey); });
     this.base.addTo(this.map); this.base.bringToBack();
   }
-  setLayers({ network, nodes, buffer }) {
+  setLayers({ network, nodes, buffer, pads = true }) {
     const t = (layer, on) => on ? layer.addTo(this.map) : this.map.removeLayer(layer);
     t(this.network, network); t(this.nodes, nodes); t(this.buffer, buffer);
+    this.showPads = pads; this.renderPads();
+  }
+
+  /** Pad readiness and handoff support as reported by the (demo or live) ground station. */
+  setPadStates(list) { for (const p of list || []) { this.padStatus[p.id] = p.status; this.padHandoff[p.id] = p.handoff; } this.renderPads(); }
+
+  /** Pad layer, clustered by screen distance so markers never overlap; every marker is labelled. */
+  renderPads() {
+    this.pads.clearLayers();
+    if (!this.showPads) return;
+    const z = this.map.getZoom(), groups = [];
+    for (const p of this.campus.pads) {
+      const pt = this.map.project(p.ll, z), g = groups.find(x => x.pt.distanceTo(pt) < 30);
+      if (g) g.items.push(p); else groups.push({ pt, items: [p] });
+    }
+    const label = p => `${p.name} — ${p.approval === 'approved' ? 'approved pad' : 'proposed pad, placement pending inspection'}; ${this.padStatus[p.id] || 'readiness unknown'}${this.padHandoff[p.id] === false ? '; no handoff crew' : ''}${p.serves?.length ? `; serves ${p.serves.map(id => this.campus.destination(id)?.name).filter(Boolean).join(', ')}` : ''}`;
+    for (const g of groups) {
+      if (g.items.length === 1) {
+        const p = g.items[0], st = this.padStatus[p.id] || 'unknown';
+        L.marker(p.ll, { icon: L.divIcon({ className: `mk-pad st-${st}${p.kind === 'junction' ? ' jn' : ''}`, html: '<span></span>', iconSize: [18, 18], iconAnchor: [9, 9] }), keyboard: false, title: label(p), alt: label(p) })
+          .bindTooltip(`<b>${p.name.replace(/</g, '&lt;')}</b><br>${p.approval === 'approved' ? 'Approved' : 'Proposed: placement pending inspection'}<br>${st}${this.padHandoff[p.id] === false ? ' · no handoff crew' : ''}`, { direction: 'top', offset: [0, -8] })
+          .addTo(this.pads);
+      } else {
+        const ll = this.map.unproject(g.pt, z), names = g.items.map(p => p.name).join(', ');
+        L.marker(ll, { icon: L.divIcon({ className: 'mk-cluster', html: `<span>${g.items.length}</span>`, iconSize: [26, 26], iconAnchor: [13, 13] }), keyboard: false, title: `${g.items.length} pads: ${names}. Tap to zoom in.` })
+          .on('click', () => this.map.fitBounds(L.latLngBounds(g.items.map(p => p.ll)).pad(0.5), { maxZoom: 19 }))
+          .bindTooltip(`${g.items.length} pads — tap to zoom`, { direction: 'top', offset: [0, -10] }).addTo(this.pads);
+      }
+    }
   }
 
   setOrigin(o) {
@@ -69,25 +100,45 @@ export class MapView {
     L.marker(o.ll, { icon: L.divIcon({ className: 'mk-origin', html: '<span></span>', iconSize: [26, 34], iconAnchor: [13, 32] }), keyboard: false, title: 'Starting point' }).addTo(this.originLayer);
   }
 
+  /** Draw a journey from its own segment classification: guided solid cyan, unguided dashed. */
   setPlan(plan, { fit = true } = {}) {
-    this.routeLayer.clearLayers();
+    this.routeLayer.clearLayers(); this.progressLayer.clearLayers();
     if (!plan) return;
     const all = [];
-    if (plan.transfer?.coords?.length > 1 && plan.transfer.needed) {
-      L.polyline(plan.transfer.coords, { pane: 'route', weight: 4, className: 'rt-transfer', interactive: false }).addTo(this.routeLayer);
-      all.push(...plan.transfer.coords);
+    for (const seg of plan.segments || []) {
+      if (!seg.coords || seg.coords.length < 2) continue;
+      if (seg.kind === 'guided') {
+        L.polyline(seg.coords, { pane: 'route', weight: 10, className: 'rt-glow', interactive: false }).addTo(this.routeLayer);
+        L.polyline(seg.coords, { pane: 'route', weight: 4, className: 'rt-guided', interactive: false }).addTo(this.routeLayer);
+        L.polyline(seg.coords, { pane: 'route', weight: 4, className: 'rt-pulse', interactive: false }).addTo(this.routeLayer);
+      } else L.polyline(seg.coords, { pane: 'route', weight: 4, className: 'rt-unguided', interactive: false }).addTo(this.routeLayer);
+      all.push(...seg.coords);
     }
-    if (plan.guided?.coords?.length > 1) {
-      L.polyline(plan.guided.coords, { pane: 'route', weight: 10, className: 'rt-glow', interactive: false }).addTo(this.routeLayer);
-      L.polyline(plan.guided.coords, { pane: 'route', weight: 4, className: 'rt-guided', interactive: false }).addTo(this.routeLayer);
-      L.polyline(plan.guided.coords, { pane: 'route', weight: 4, className: 'rt-pulse', interactive: false }).addTo(this.routeLayer);
-      all.push(...plan.guided.coords);
-    }
-    const end = plan.guided?.coords?.at(-1) || plan.direct?.coords?.at(-1);
+    if (!plan.segments?.length && plan.direct?.coords?.length > 1) { L.polyline(plan.direct.coords, { pane: 'route', weight: 4, className: 'rt-unguided', interactive: false }).addTo(this.routeLayer); all.push(...plan.direct.coords); }
+    const end = (plan.segments?.at(-1)?.coords || plan.direct?.coords)?.at(-1);
     if (end) L.marker(end, { icon: L.divIcon({ className: 'mk-dest', html: '<span></span>', iconSize: [28, 28], iconAnchor: [14, 26] }), keyboard: false, title: plan.destination.name + ' entrance' }).addTo(this.routeLayer);
-    if (plan.pad) L.circleMarker(plan.pad.ll, { radius: 16, className: 'pad-ring', interactive: false }).addTo(this.routeLayer);
+    if (plan.startPad) L.circleMarker(plan.startPad.ll, { radius: 16, className: 'pad-ring', interactive: false }).addTo(this.routeLayer);
+    for (const h of plan.handoffs || []) L.marker(h.ll, { icon: L.divIcon({ className: 'mk-handoff', html: '<span>H</span>', iconSize: [24, 24], iconAnchor: [12, 12] }), keyboard: false, title: `Handoff at ${h.name}`, zIndexOffset: 1000 }).bindTooltip(`Handoff: ${h.name}`, { direction: 'top', offset: [0, -12] }).addTo(this.routeLayer);
     if (plan.origin?.ll) all.push(plan.origin.ll);
     if (fit && all.length) this.fitTo(all);
+  }
+  /** Walking-only directions: one dashed (unguided) line. */
+  setWalkOnly(plan) {
+    this.routeLayer.clearLayers(); this.progressLayer.clearLayers();
+    if (!plan?.direct?.coords) return;
+    L.polyline(plan.direct.coords, { pane: 'route', weight: 4, className: 'rt-unguided', interactive: false }).addTo(this.routeLayer);
+    L.marker(plan.direct.coords.at(-1), { icon: L.divIcon({ className: 'mk-dest', html: '<span></span>', iconSize: [28, 28], iconAnchor: [14, 26] }), keyboard: false, title: plan.destination.name + ' entrance' }).addTo(this.routeLayer);
+    this.fitTo([...plan.direct.coords, plan.origin.ll]);
+  }
+  /** In transit: completed guided legs, the leg being guided right now, and unguided movement. */
+  setProgress({ plan, legIndex = 0, done = 0, active = false, track = [] }) {
+    this.progressLayer.clearLayers();
+    if (!plan?.legs) return;
+    plan.legs.forEach((l, i) => {
+      if (i < done) L.polyline(l.coords, { pane: 'route', weight: 6, className: 'rt-done', interactive: false }).addTo(this.progressLayer);
+      else if (i === legIndex && active) L.polyline(l.coords, { pane: 'route', weight: 7, className: 'rt-active', interactive: false }).addTo(this.progressLayer);
+    });
+    for (const t of track) if (t.length > 1) L.polyline(t, { pane: 'ghost', weight: 4, className: 'rt-offtrack', interactive: false }).addTo(this.progressLayer);
   }
 
   setVisitor(v) {

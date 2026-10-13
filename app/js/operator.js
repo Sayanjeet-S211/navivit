@@ -38,9 +38,13 @@ async function poll() {
 const fmtAge = s => s == null ? '—' : s < 1 ? 'now' : `${Math.round(s)} s`;
 function render() {
   $('#auto').setAttribute('aria-checked', String(data.autoApprove));
-  $('#pads').innerHTML = data.pads.map(p => `<div class="op-pad"><span><b>${esc(p.name)}</b><br><small class="muted">${esc(p.status)}</small></span>
-    <label class="sr-only" for="pad-${esc(p.id)}">${esc(p.name)} readiness</label>
-    <select id="pad-${esc(p.id)}" data-pad="${esc(p.id)}" ${p.status === 'busy' ? 'disabled' : ''}>${['ready', 'unavailable', 'unknown'].map(s => `<option ${p.status === s ? 'selected' : ''}>${s}</option>`).join('')}${p.status === 'busy' ? '<option selected>busy</option>' : ''}</select></div>`).join('');
+  $('#aircraft').textContent = `Aircraft available: ${data.aircraftAvailable}`;
+  // Pads in use or with a problem first; everything is a proposed site pending inspection.
+  const order = p => (p.status === 'busy' ? 0 : p.status !== 'ready' || !p.handoff ? 1 : 2);
+  $('#pads').innerHTML = [...data.pads].sort((a, b) => order(a) - order(b) || a.name.localeCompare(b.name)).map(p => `<div class="op-pad"><span><b>${esc(p.name)}</b><br><small class="muted">${esc(p.kind)} · ${p.approval === 'approved' ? 'approved' : 'proposed'} · ${esc(p.status)}${p.handoff ? ' · handoff crew' : ' · no handoff'}</small></span>
+    <span class="row" style="gap:6px"><label class="sr-only" for="pad-${esc(p.id)}">${esc(p.name)} readiness</label>
+    <select id="pad-${esc(p.id)}" data-pad="${esc(p.id)}" ${p.status === 'busy' ? 'disabled' : ''}>${['ready', 'unavailable', 'unknown'].map(s => `<option ${p.status === s ? 'selected' : ''}>${s}</option>`).join('')}${p.status === 'busy' ? '<option selected>busy</option>' : ''}</select>
+    <button class="btn ${p.handoff ? '' : 'on'}" data-handoff="${p.handoff ? 0 : 1}" data-pid="${esc(p.id)}" aria-label="${p.handoff ? 'Mark no handoff crew at' : 'Mark handoff crew at'} ${esc(p.name)}">${p.handoff ? 'Crew' : 'No crew'}</button></span></div>`).join('');
   const list = data.sessions.filter(s => s.request || !s.closed);
   $('#sessions').innerHTML = list.length ? list.map(s => {
     const r = s.request, m = s.mission, a = s.aircraft, f = new Set(s.faults);
@@ -48,7 +52,7 @@ function render() {
     return `<article class="op-session">
       <div class="between"><h3>${esc(r?.destination || 'No request yet')}${r?.pad ? ` <small class="muted">from ${esc(r.pad)}</small>` : ''}</h3>${r ? `<span class="op-state ${r.state === 'AWAITING_OPERATOR' ? 'await' : ''}">${esc(r.state)}</span>` : ''}</div>
       <dl class="kv">
-        <dt>Mission</dt><dd>${esc(m ? m.status + (m.rc ? ' · RC' : '') : '—')}</dd><dt>Hold</dt><dd>${esc(m?.holdReason || '—')}</dd>
+        <dt>Mission</dt><dd>${esc(m ? m.status + (m.rc ? ' · RC' : '') + (m.legCount ? ` · leg ${m.legIndex + 1}/${m.legCount}` : '') : '—')}</dd><dt>Hold</dt><dd>${esc(m?.holdReason || '—')}</dd>
         <dt>Visitor progress</dt><dd>${m ? `${fmtDist(m.visitorProgressM)} / ${fmtDist(m.guidedLengthM)}` : '—'}</dd><dt>Lead</dt><dd>${m?.leadM != null && ['leading', 'waiting', 'paused'].includes(m.status) ? Math.round(m.leadM) + ' m' : '—'}</dd>
         <dt>Position source</dt><dd>${esc(s.source)}</dd><dt>Last fix</dt><dd>${s.lastFix ? `±${Math.round(s.lastFix.accuracyM)} m · ${fmtAge(s.lastFix.ageS)}` : '—'}</dd>
         <dt>Aircraft</dt><dd>${a ? `${esc(a.mode)} · ${a.altM.toFixed(1)} m · ${fmtAge(a.ageS)}` : '—'}</dd><dt>Battery / EKF</dt><dd>${a ? `${a.batteryV.toFixed(2)} V ${a.batteryPct}% · ${esc(a.ekf)}` : '—'}</dd>
@@ -67,7 +71,9 @@ function render() {
 document.addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b || !token || b.disabled) return;
   try {
-    if (b.id === 'auto') await call('operator/auto-approve', { method: 'POST', body: { on: !data.autoApprove } });
+    if (b.dataset.aircraft) await call('operator/aircraft', { method: 'POST', body: { available: data.aircraftAvailable + +b.dataset.aircraft } });
+    else if (b.dataset.handoff) await call(`operator/pads/${encodeURIComponent(b.dataset.pid)}`, { method: 'POST', body: { handoff: b.dataset.handoff === '1' } });
+    else if (b.id === 'auto') await call('operator/auto-approve', { method: 'POST', body: { on: !data.autoApprove } });
     else if (b.dataset.decide) { await call(`operator/requests/${encodeURIComponent(b.dataset.rid)}/decision`, { method: 'POST', body: { approve: b.dataset.decide === '1' } }); announce(b.dataset.decide === '1' ? 'Approved' : 'Declined'); }
     else if (b.dataset.rc) await call(`operator/sessions/${encodeURIComponent(b.dataset.sid)}/rc`, { method: 'POST', body: { on: b.dataset.rc === '1' } });
     else if (b.dataset.fault) await call(`operator/sessions/${encodeURIComponent(b.dataset.sid)}/faults`, { method: 'POST', body: { name: b.dataset.fault, on: b.getAttribute('aria-pressed') !== 'true' } });

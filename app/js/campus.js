@@ -1,6 +1,7 @@
 // Campus dataset: validation, routing and trip planning. Shared by browser, server and tests.
 import { haversine, localFrame, pointInPolygon, distanceToPolygonEdge, isLatLon, fnv1a, projectOnSegment } from './geo.js';
 import { CONFIG, walkingEtaS } from './config.js';
+import { planJourney } from './journey.js';
 
 export class CampusError extends Error {
   constructor(errors) { super('Campus data failed validation: ' + errors.slice(0, 3).join('; ')); this.errors = errors; }
@@ -59,8 +60,20 @@ export function validateCampus(raw) {
   return { errors, warnings, stats: { nodes: nodes.length, segments: edges.size, networkKm: km / 1000, components, destinations: raw?.destinations?.length || 0, pads: raw?.pads?.length || 0 } };
 }
 
+/** Validate the pad configuration against the campus graph. */
+export function validatePads(padsRaw, raw) {
+  const errors = [], ids = new Set(), nodes = new Set((raw.nodes || []).map(n => n.id)), dests = new Set((raw.destinations || []).map(d => d.id));
+  if (!padsRaw || padsRaw.schema !== 'navi-pads/1') errors.push('unknown pad schema');
+  for (const p of padsRaw?.pads || []) {
+    if (!p.id || ids.has(p.id)) errors.push(`pad id ${p.id} missing or duplicated`); ids.add(p.id);
+    if (!nodes.has(p.node)) errors.push(`pad ${p.id} node ${p.node} missing`);
+    for (const d of p.serves || []) if (!dests.has(d)) errors.push(`pad ${p.id} serves unknown destination ${d}`);
+  }
+  return errors;
+}
+
 export class Campus {
-  constructor(raw, config = CONFIG) {
+  constructor(raw, config = CONFIG, padsRaw = null) {
     const v = validateCampus(raw);
     if (v.errors.length) throw new CampusError(v.errors);
     this.raw = raw; this.config = config; this.version = raw.version; this.stats = v.stats; this.warnings = v.warnings;
@@ -79,7 +92,11 @@ export class Campus {
     this.boundary = raw.boundary;
     this.frame = localFrame(raw.centre || raw.boundary[0]);
     this.boundaryXY = raw.boundary.map(this.frame.toXY);
-    this.pads = raw.pads.map(p => ({ ...p, ll: this.nodes.get(p.node).ll }));
+    if (padsRaw) { const pe = validatePads(padsRaw, raw); if (pe.length) throw new CampusError(pe); }
+    // Without a pad configuration only the six source pads are known (no handoff support recorded).
+    const padList = padsRaw ? padsRaw.pads : raw.pads.map(p => ({ ...p, kind: 'source', approval: 'proposed', serves: [], support: { handoff: false } }));
+    this.padsVersion = padsRaw?.version || 'source-6';
+    this.pads = padList.map(p => ({ ...p, ll: this.nodes.get(p.node).ll }));
     this.destinations = raw.destinations.map(d => ({ ...d, entranceLL: d.entrances.map(e => this.nodes.get(e).ll) }))
       .sort((a, b) => a.name.localeCompare(b.name));
     this.categories = [...new Set(this.destinations.map(d => d.category))].sort();
@@ -163,7 +180,7 @@ export class Campus {
 
   /** Places a visitor can choose as a starting point. */
   places() {
-    const out = this.pads.map(p => ({ kind: 'pad', id: 'pad:' + p.id, name: p.name, sub: 'Launch pad', nodeId: p.node, ll: p.ll }));
+    const out = this.pads.filter(p => p.kind === 'source').map(p => ({ kind: 'pad', id: 'pad:' + p.id, name: p.name, sub: p.approval === 'approved' ? 'Launch pad' : 'Proposed launch pad', nodeId: p.node, ll: p.ll }));
     for (const d of this.destinations) d.entrances.forEach((e, i) => out.push({ kind: 'place', id: `place:${d.id}:${i}`, name: d.name, sub: d.entrances.length > 1 ? `${d.category} · entrance ${i + 1}` : d.category, nodeId: e, ll: this.nodes.get(e).ll }));
     return out;
   }
@@ -172,75 +189,10 @@ export class Campus {
 
   /**
    * Plan a trip. origin: {kind:'measured'|'pin'|'place'|'pad', ll, nodeId?, accuracyM?, label}
-   * padStatus: {[padId]: 'ready'|'unavailable'|'unknown'} (unknown when not supplied).
+   * padStatus: {[padId]: 'ready'|'unavailable'|'unknown'|'busy'}; padHandoff: {[padId]: boolean};
+   * aircraftAvailable: number. See journey.js.
    */
-  plan({ origin, destinationId, padStatus = {} }) {
-    const c = this.config, dest = this.destination(destinationId);
-    if (!dest) throw new Error('Unknown destination: ' + destinationId);
-    if (!origin || !isLatLon(origin.ll)) throw new Error('Invalid origin');
-    const snap = origin.nodeId != null && this.nodes.has(origin.nodeId) ? { id: origin.nodeId, distM: haversine(origin.ll, this.node(origin.nodeId).ll) } : this.nearestNode(origin.ll);
-    const outsideM = this.outsideM(origin.ll);
-    const o = { ...origin, nodeId: snap.id, offGraphM: snap.distM, outsideM, outside: outsideM > c.fenceBufferM };
-
-    const best = src => dest.entrances.map(e => ({ e, p: this.path(src, e) })).filter(x => x.p).sort((a, b) => a.p.lengthM - b.p.lengthM)[0];
-    const d0 = best(o.nodeId);
-    const direct = d0 ? { ...d0.p, entrance: d0.e, lengthM: d0.p.lengthM + o.offGraphM } : null;
-    if (direct) direct.etaS = walkingEtaS(direct.lengthM, c);
-
-    const candidates = this.pads.map(p => {
-      const g = best(p.node);
-      if (!g) return null;
-      const fence = this.routeFenceCheck(g.p.coords);
-      const withinLimit = g.p.lengthM <= c.legLimitM && g.p.maxEdgeM <= c.legLimitM;
-      return { pad: p, status: padStatus[p.id] || 'unknown', guided: { ...g.p, entrance: g.e, etaS: walkingEtaS(g.p.lengthM, c), withinLimit, fence } };
-    }).filter(Boolean).sort((a, b) => a.guided.lengthM - b.guided.lengthM);
-
-    const feasible = x => x.guided.withinLimit && !x.guided.fence.breach;
-    const reasons = [], notes = [];
-    let pick = candidates.find(x => feasible(x) && x.status === 'ready');
-    let availability = 'available';
-    if (!pick) {
-      pick = candidates.find(x => feasible(x) && x.status === 'unknown');
-      availability = pick ? 'unknown' : 'unavailable';
-    }
-    const nearest = candidates[0];
-    if (pick && nearest && pick !== nearest) {
-      if (nearest.status === 'unavailable') notes.push(`${nearest.pad.name} is unavailable, so the plan uses ${pick.pad.name}.`);
-      else if (!feasible(nearest)) notes.push(`${nearest.pad.name} cannot serve this route, so the plan uses ${pick.pad.name}.`);
-    }
-    if (!pick) {
-      const any = candidates.find(feasible);
-      if (!any) reasons.push({ code: 'leg_over_limit', text: `No launch pad is within one ${c.legLimitM} m guided leg of this destination.` });
-      else reasons.push({ code: 'no_pad_available', text: 'No suitable launch pad is available right now.' });
-      pick = nearest;
-    }
-    if (o.outside) reasons.push({ code: 'origin_outside', text: 'Your starting point is outside the campus boundary.' });
-    if (pick && pick.guided.fence.breach) reasons.push({ code: 'route_outside_fence', text: 'Part of the guided route leaves the buffered campus boundary.' });
-
-    const t = pick ? this.path(o.nodeId, pick.pad.node) : null;
-    const transfer = t ? { ...t, lengthM: t.lengthM + o.offGraphM } : null;
-    if (transfer) { transfer.etaS = walkingEtaS(transfer.lengthM, c); transfer.needed = transfer.lengthM > c.padArrivalM; }
-    if (!this.classified) notes.push('Footpath and road classification is not in the campus data yet, so route inspection is pending.');
-
-    // A destination whose entrance is the pad itself (or within the arrival radius) needs no guided leg.
-    const guideNeeded = !!pick && pick.guided.lengthM > c.padArrivalM;
-    if (pick && !guideNeeded && !reasons.length) notes.unshift(`The ${dest.name} entrance is at ${pick.pad.name}, so no guided leg is needed.`);
-
-    const routeId = 'r' + fnv1a([this.version, pick?.pad.node, pick?.guided.nodes.join(','), transfer?.nodes.join(','), destinationId].join('|'));
-    return {
-      guideNeeded,
-      routeId, version: this.version,
-      origin: o,
-      destination: { id: dest.id, name: dest.name, category: dest.category },
-      direct, transfer,
-      pad: pick ? { ...pick.pad, status: pick.status } : null,
-      guided: pick ? pick.guided : null,
-      candidates: candidates.map(x => ({ id: x.pad.id, name: x.pad.name, status: x.status, lengthM: x.guided.lengthM, feasible: feasible(x) })),
-      availability: reasons.length ? 'unavailable' : !guideNeeded ? 'not_needed' : availability,
-      reasons, notes,
-      inspection: this.classified ? 'classified' : 'pending'
-    };
-  }
+  plan(opts) { return planJourney(this, opts); }
 }
 
 /** Progress (metres along) and distance of a point from a polyline, with every candidate projection. */

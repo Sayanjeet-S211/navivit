@@ -67,7 +67,10 @@ p{margin:0}
 .boundary{stroke:var(--danger);stroke-opacity:.8}
 .net{stroke:var(--line-strong)}
 .node{fill:var(--text2)}
-.rt-transfer{stroke:var(--text2);stroke-dasharray:2 9;stroke-linecap:round;fill:none}
+.rt-transfer,.rt-unguided{stroke:var(--text2);stroke-dasharray:2 9;stroke-linecap:round;fill:none}
+.rt-done{stroke:var(--ok);stroke-opacity:.85;fill:none;stroke-linecap:round}
+.rt-active{stroke:var(--accent);fill:none;stroke-linecap:round;filter:drop-shadow(0 0 4px var(--accent))}
+.rt-offtrack{stroke:var(--caution);stroke-dasharray:1 7;stroke-linecap:round;fill:none}
 .rt-glow{stroke:var(--accent);stroke-opacity:.18;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .rt-guided{stroke:var(--accent);fill:none;stroke-linecap:round;stroke-linejoin:round}
 .rt-pulse{stroke:var(--text);stroke-opacity:.75;fill:none;stroke-dasharray:3 17;stroke-linecap:round;animation:pulse-run 1s linear infinite}
@@ -78,7 +81,34 @@ p{margin:0}
 .raw-dot{stroke:var(--text2);fill:none;stroke-width:1.5}
 .landing-zone{stroke:var(--ok);fill:var(--ok);fill-opacity:.15;stroke-width:2}
 .landing-ring{stroke:var(--ok);fill:none;stroke-opacity:.6;stroke-dasharray:3 5}
-.mk-pad span{display:grid;place-items:center;width:22px;height:22px;border-radius:5px;border:1.5px solid var(--caution);background:var(--surface);color:var(--caution);font:600 11px var(--mono)}
+.mk-pad span{display:block;width:12px;height:12px;margin:3px;transform:rotate(45deg);border:2px solid var(--accent);background:var(--surface)}
+.mk-pad.jn span{width:10px;height:10px;margin:4px}
+.mk-pad.st-unavailable span{border-color:var(--danger);background:var(--danger-soft)}
+.mk-pad.st-unknown span{border-color:var(--text2)}
+.mk-pad.st-busy span{border-color:var(--caution);background:var(--caution)}
+.mk-cluster span{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;border:2px solid var(--accent);background:var(--surface);color:var(--text);font:600 12px var(--mono)}
+.mk-handoff span{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;background:var(--caution);color:#1B1203;font:700 12px var(--mono);border:2px solid var(--surface)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--text2);margin:0 0 6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .ln{display:inline-block;width:26px;height:0;border-top:4px solid var(--accent)}
+.legend .ln.u{border-top:4px dotted var(--text2)}
+.legend .pd{display:inline-block;width:10px;height:10px;transform:rotate(45deg);border:2px solid var(--accent)}
+.cov{border:1px solid var(--line-strong);border-radius:var(--r);padding:14px 16px;background:var(--raised);margin-bottom:12px}
+.cov.ok{border-color:color-mix(in srgb,var(--ok) 60%,transparent)}
+.cov.bad{border-color:var(--danger)}
+.cov-main{display:grid;grid-template-columns:1fr auto;align-items:end;gap:2px 10px}
+.cov-main small{grid-column:1/-1;color:var(--text2);font-size:13px}
+.cov-main b{font:700 34px/1.1 var(--head);font-variant-numeric:tabular-nums}
+.cov-bar{height:10px;border-radius:5px;margin:10px 0;background:repeating-linear-gradient(90deg,var(--text2) 0 3px,transparent 3px 7px);overflow:hidden;opacity:.9}
+.cov-bar .g{display:block;height:100%;background:var(--accent);border-radius:5px 0 0 5px}
+.cov-kv dt{display:flex;align-items:center;gap:8px}
+.sw{display:inline-block;width:14px;height:4px;border-radius:2px;background:var(--accent)}
+.sw.u{background:repeating-linear-gradient(90deg,var(--text2) 0 2px,transparent 2px 4px)}
+.card.unavailable{border-color:var(--danger);background:var(--danger-soft);margin-bottom:12px}
+.card.unavailable h3{font-size:17px}
+.itin .dot.guided{background:var(--accent-soft);color:var(--accent)}
+.itin .dot.wait{background:var(--caution-soft);color:var(--caution)}
+.leg-chip{margin-left:auto}
 .mk-origin span{display:block;width:26px;height:34px;background:var(--secondary);clip-path:path("M13 34 C13 34 0 20 0 12 A13 13 0 1 1 26 12 C26 20 13 34 13 34Z");box-shadow:0 0 0 2px var(--surface)}
 .mk-origin span::after{content:"";position:absolute;left:8px;top:7px;width:10px;height:10px;border-radius:50%;background:var(--surface)}
 .mk-dest span{display:block;width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--accent);border:3px solid var(--surface)}
