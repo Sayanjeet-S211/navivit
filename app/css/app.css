@@ -11,7 +11,7 @@
   --base:#090D16;--surface:#131C2E;--raised:#1E293B;--accent:#00F0FF;--secondary:#3B82F6;--caution:#F59E0B;--danger:#EF4444;--ok:#10B981;
   --text:#F8FAFC;--text2:#94A3B8;--line:rgba(148,163,184,.16);--line-strong:rgba(148,163,184,.34);--ink:#04131A;
   --accent-soft:rgba(0,240,255,.12);--caution-soft:rgba(245,158,11,.14);--danger-soft:rgba(239,68,68,.14);--ok-soft:rgba(16,185,129,.14);
-  --map-bg:#0B111C;--map-grid:rgba(0,240,255,.035);--shadow:0 -10px 40px rgba(0,0,0,.45);
+  --drone:#FF3B5C;--map-bg:#0B111C;--map-grid:rgba(0,240,255,.035);--shadow:0 -10px 40px rgba(0,0,0,.45);
   --head:"Space Grotesk",system-ui,sans-serif;--body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
   --r:14px;--top:calc(52px + env(safe-area-inset-top));--ease:cubic-bezier(.4,0,.2,1);
   color-scheme:dark;
@@ -20,7 +20,7 @@
   --base:#F5F7FA;--surface:#FFFFFF;--raised:#EEF2F6;--accent:#007A8C;--secondary:#1D4ED8;--caution:#B45309;--danger:#C81E1E;--ok:#047857;
   --text:#0B1220;--text2:#475569;--line:rgba(15,23,42,.12);--line-strong:rgba(15,23,42,.28);--ink:#FFFFFF;
   --accent-soft:rgba(0,122,140,.10);--caution-soft:rgba(180,83,9,.10);--danger-soft:rgba(200,30,30,.09);--ok-soft:rgba(4,120,87,.10);
-  --map-bg:#EEF2F6;--map-grid:rgba(15,23,42,.05);--shadow:0 -8px 30px rgba(15,23,42,.14);
+  --drone:#D61F45;--map-bg:#EEF2F6;--map-grid:rgba(15,23,42,.05);--shadow:0 -8px 30px rgba(15,23,42,.14);
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -114,7 +114,7 @@ p{margin:0}
 .mk-dest span{display:block;width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--accent);border:3px solid var(--surface)}
 .mk-visitor span{display:block;width:22px;height:22px;border-radius:50%;background:var(--ok);border:3px solid var(--surface);box-shadow:0 0 0 2px var(--ok)}
 .mk-visitor.stale span{background:var(--text2);box-shadow:0 0 0 2px var(--text2);opacity:.7}
-.mk-aircraft span{display:block;width:34px;height:34px;color:var(--accent);filter:drop-shadow(0 0 6px color-mix(in srgb,var(--accent) 60%,transparent));transition:transform .3s var(--ease)}
+.mk-aircraft span{display:block;width:34px;height:34px;color:var(--drone);filter:drop-shadow(0 0 6px color-mix(in srgb,var(--drone) 60%,transparent));transition:transform .3s var(--ease)}
 .mk-aircraft svg{width:34px;height:34px}
 .mk-aircraft.stale span{color:var(--text2);opacity:.55;filter:none}
 .tt-stale{background:var(--surface);color:var(--text);border:1px solid var(--line-strong);font:500 12px var(--mono);box-shadow:none}
@@ -271,7 +271,7 @@ details.more[open] summary::after{content:"–"}
 /* ---------- HUD ---------- */
 .hud{position:absolute;left:max(10px,env(safe-area-inset-left));right:62px;top:10px;z-index:650;display:flex;gap:8px;align-items:flex-start;pointer-events:none}
 .sky{pointer-events:auto;display:flex;gap:10px;align-items:center;padding:8px 12px 8px 8px;border-radius:14px;background:color-mix(in srgb,var(--surface) 92%,transparent);border:1px solid var(--line-strong);min-height:56px;flex:1;min-width:0}
-.sky .arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);display:grid;place-items:center;flex:none;color:var(--accent)}
+.sky .arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);display:grid;place-items:center;flex:none;color:var(--drone)}
 .sky .arrow svg{width:26px;height:26px;transition:transform .4s var(--ease)}
 .sky b{font:600 14px var(--mono);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sky small{font-size:12px;color:var(--text2);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
