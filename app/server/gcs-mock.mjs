@@ -28,7 +28,8 @@ const flag = name => args.includes('--' + name);
 
 const PORT = +arg('port', 8080), HOST = arg('host', '127.0.0.1');
 const CERT = arg('cert'), KEY = arg('key');
-const OPERATOR_TOKEN = arg('operator-token', process.env.NAVI_OPERATOR_TOKEN || crypto.randomBytes(18).toString('base64url'));
+// No operator token by default; pass --operator-token (or NAVI_OPERATOR_TOKEN) to require one.
+const OPERATOR_TOKEN = arg('operator-token', process.env.NAVI_OPERATOR_TOKEN || null);
 const TLS = !!(CERT && KEY);
 
 const campusRaw = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/campus.v1.json'), 'utf8'));
@@ -83,7 +84,7 @@ const sameOrigin = req => !req.headers.origin || req.headers.origin === selfOrig
 
 const bearer = req => (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
 const safeEq = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
-const isOperator = req => safeEq(bearer(req), OPERATOR_TOKEN);
+const isOperator = req => !OPERATOR_TOKEN || safeEq(bearer(req), OPERATOR_TOKEN);
 const visitorSession = (req, id) => gs.session(id, bearer(req));
 
 /* ------------------------------------------------------------------ validation */
@@ -282,6 +283,6 @@ server.listen(PORT, HOST, () => {
   console.log(`NAVI mock ground station (SIMULATED aircraft) on ${base}/`);
   console.log(`  visitor app:   ${base}/   (switch Settings → Mode → Live ground station)`);
   console.log(`  operator view: ${base}/operator.html`);
-  console.log(`  operator token: ${OPERATOR_TOKEN}`);
+  console.log(`  operator console: ${OPERATOR_TOKEN ? 'token required' : 'open, no token'}`);
   console.log(`  auto-approve: ${gs.autoApprove ? 'on' : 'off'}${TLS ? '' : '   (HTTP: location sharing works only on this machine via localhost)'}`);
 });

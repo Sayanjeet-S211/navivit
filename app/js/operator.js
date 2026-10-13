@@ -8,7 +8,7 @@ let token = null, timer = null, data = null, assisting = null; // assisting: { s
 try { token = sessionStorage.getItem('navi.operator'); } catch {}
 
 async function call(path, { method = 'GET', body } = {}) {
-  const r = await fetch('/api/' + path, { method, headers: { Authorization: 'Bearer ' + token, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store', credentials: 'same-origin' });
+  const r = await fetch('/api/' + path, { method, headers: { ...(token ? { Authorization: 'Bearer ' + token } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store', credentials: 'same-origin' });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw Object.assign(new Error(j.error || 'http_' + r.status), { status: r.status });
   return j;
@@ -69,7 +69,7 @@ function render() {
 }
 
 document.addEventListener('click', async e => {
-  const b = e.target.closest('button'); if (!b || !token || b.disabled) return;
+  const b = e.target.closest('button'); if (!b || !data || b.disabled) return;
   try {
     if (b.dataset.aircraft) await call('operator/aircraft', { method: 'POST', body: { available: data.aircraftAvailable + +b.dataset.aircraft } });
     else if (b.dataset.handoff) await call(`operator/pads/${encodeURIComponent(b.dataset.pid)}`, { method: 'POST', body: { handoff: b.dataset.handoff === '1' } });
@@ -103,4 +103,5 @@ async function handover(sessionId, source) {
   await call(`operator/sessions/${encodeURIComponent(sessionId)}/handover`, { method: 'POST', body: { source } });
 }
 
-if (token) call('operator/sessions').then(start).catch(() => { try { sessionStorage.removeItem('navi.operator'); } catch {} });
+// Open straight away when the ground station needs no token; otherwise show the sign-in form.
+call('operator/sessions').then(start).catch(() => { token = null; try { sessionStorage.removeItem('navi.operator'); } catch {} });

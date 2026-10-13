@@ -10,7 +10,7 @@ A zero-install Progressive Web App for visitors to VIT Chennai. A visitor sets a
 | --- | --- |
 | Demo, no install | Open `app/` from any static server, e.g. the GitHub Pages site: `https://sayanjeet-s211.github.io/navivit/app/`, or `python3 -m http.server` in the repo root and visit `http://localhost:8000/app/` |
 | Live mode with the mock ground station | `cd app && node server/gcs-mock.mjs` (Node 18.17+, no dependencies), open `http://localhost:8080/`, then Settings → Mode → **Live ground station**. Add `--auto-approve` to skip operator approval |
-| Operator console | `http://localhost:8080/operator.html`, sign in with the operator token printed at start-up (or set `--operator-token` / `NAVI_OPERATOR_TOKEN`) |
+| Operator console | `http://localhost:8080/operator.html`, opens directly, no token needed. To require one, start the server with `--operator-token <secret>` (or `NAVI_OPERATOR_TOKEN`) |
 | Phones on the campus network | Run with HTTPS: `node server/gcs-mock.mjs --host 0.0.0.0 --port 8443 --cert cert.pem --key key.pem` (see Deployment) |
 | Tests | `node --test tests/*.test.mjs` (core + API), `node tests/e2e.mjs` (browser, needs Playwright), `node tests/budget.mjs` (first-load size) |
 
@@ -104,7 +104,7 @@ The total walk must be at most max(1.3 × the shortest walking route, the shorte
 
 ## API (implemented by `server/gcs-mock.mjs`)
 
-All JSON. Visitor routes need `Authorization: Bearer <session token>`; operator routes need the operator token. State-changing requests with a foreign `Origin` are refused (403). Requests are rate-limited per client; bodies are capped at 16 KB.
+All JSON. Visitor routes need `Authorization: Bearer <session token>`; operator routes are open by default and need the operator token only when the server was started with one. State-changing requests with a foreign `Origin` are refused (403). Requests are rate-limited per client; bodies are capped at 16 KB.
 
 | Method & path | Purpose |
 | --- | --- |
